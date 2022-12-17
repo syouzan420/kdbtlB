@@ -27,6 +27,7 @@ library
   exposed-modules:
       Myapp
       Mydata
+      Myfunc
   other-modules:
       Paths_kdbtlB
   hs-source-dirs:

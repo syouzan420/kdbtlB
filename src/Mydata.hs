@@ -1,9 +1,11 @@
+
 module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes(..)
              ,toMana, applyMana, initstate, (.>), maxY) where
 
 import qualified Data.Map.Strict as M
 import Data.List (findIndex, isInfixOf)
 import Data.List.Split (splitOn)
+
 
 data Mana = Mana T Y
 
@@ -54,7 +56,7 @@ instance Show Mana where
 (.>) ms (Mana t y) = makeManas (y (getTs ms) t) y
 
 getTs :: [Mana] -> [T]
-getTs mns = map (\(Mana t' _) -> t') mns
+getTs ms = map (\(Mana t' _) -> t') ms
 
 makeManas :: [T] -> Y -> [Mana]
 makeManas ts y = map (\t -> Mana t y) ts
@@ -214,10 +216,10 @@ nageru _ _ st = (st,0)
 
 makeBullets :: [(Bu,Int)] -> [(Dr,Int)] -> Int -> (Int, Int, Int) -> ([Bul],Int)
 makeBullets [] _ _ _ = ([],0)
-makeBullets ((b,s):bs) hus sp (y,x0,x1) = 
+makeBullets ((b,s):bss) hus sp (y,x0,x1) = 
   let (dy, dx) = calcDelta hus sp
    in ((Bul{bt=b, bs=s, by=y, bx=(x0+x1) `div` 2, bdy=dy, bdx=dx}):(fst mkb),(s*sp)+(snd mkb))
-  where mkb = makeBullets bs hus sp (y,x0,x1)
+  where mkb = makeBullets bss hus sp (y,x0,x1)
 
 getPlp :: State -> (Int, Int, Int)
 getPlp st = let p = pl st in (py p, px0 p, px1 p)
