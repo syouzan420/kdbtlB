@@ -20,13 +20,14 @@ import Brick.Widgets.Center as C
 import Mydata(State(..), initstate)
 import Myfunc(exeCom, doWithTime)
 
-data Name = Edit | View | Com deriving (Ord, Show, Eq)
+data Name = Edit | View | Coma | Mess deriving (Ord, Show, Eq)
 
 data CustomEvent = Logstate deriving Show
 
 data St = St {_state :: State
              ,_stlog :: String
              ,_cmlog :: String
+             ,_mslog :: String
              ,_edit :: E.Editor String Name
              }
 
@@ -34,13 +35,17 @@ makeLenses ''St
 
 drawUI :: St -> [Widget Name]
 drawUI st = [ui]
-    where a = (strWrap $ st^.stlog)
+    where s = (strWrap $ st^.stlog)
           c = (strWrap $ st^.cmlog)
-          cm = viewport Com Vertical c
-          v = viewport View Vertical a
+          m = (strWrap $ st^.mslog)
+          cm = viewport Coma Vertical c
+          ms = viewport Mess Vertical m
+          v = viewport View Vertical s
           e1 = E.renderEditor (str.unlines) True (st^.edit)
           ui = C.center $
-            (str "Com : " <+> (hLimit 60 $ vLimit 5 cm)) <=>
+            (str "Mes : " <+> (hLimit 60 $ vLimit 5 ms)) <=>
+            str " " <=>
+            (str "Com : " <+> (hLimit 60 $ vLimit 3 cm)) <=>
             str " " <=>
             (str "Inp :> " <+> (hLimit 60 $ vLimit 3 e1)) <=>
             str " " <=>
@@ -52,7 +57,10 @@ vpScroll :: ViewportScroll Name
 vpScroll = viewportScroll View
 
 cmScroll :: ViewportScroll Name
-cmScroll = viewportScroll Com
+cmScroll = viewportScroll Coma
+
+msScroll :: ViewportScroll Name
+msScroll = viewportScroll Mess 
 
 appEvent :: BrickEvent Name CustomEvent -> EventM Name St ()
 appEvent e =
@@ -65,15 +73,17 @@ appEvent e =
               com = unlines con
               s' = exeCom com st
           case s' of
-            Nothing -> stlog %= (++"Error!")
+            Nothing -> mslog %= (++"Error!") >> state .= st{mes=(mes st)++"Error!\n"}
             Just js -> state .= js
           cmlog %= (++com)
           edit .= E.editor Edit (Just 1) ""
           vScrollToEnd cmScroll
+          vScrollToEnd msScroll
         AppEvent Logstate -> do
           st <- use state 
           let nst = doWithTime st
           state .= nst 
+          mslog .= (mes st)
           if (st/=nst) then stlog %= (++(show nst)++"\n") else return ()
           vScrollToEnd vpScroll
         ev -> zoom edit $ E.handleEditorEvent ev 
@@ -83,6 +93,7 @@ initialState :: St
 initialState = St { _state = initstate
                   , _stlog = show initstate 
                   , _cmlog = ""
+                  , _mslog = ""
                   , _edit = E.editor Edit (Just 1) ""
                   }
 

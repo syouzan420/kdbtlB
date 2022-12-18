@@ -1,9 +1,9 @@
 
-module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes(..)
+module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes
              ,toMana, applyMana, initstate, (.>), maxY) where
 
 import qualified Data.Map.Strict as M
-import Data.List (findIndex, isInfixOf)
+import Data.List (findIndex, isInfixOf, intersect)
 import Data.List.Split (splitOn)
 
 
@@ -14,6 +14,7 @@ data T = T Na Ta deriving (Eq, Show)
 type Y = [T] -> T -> [T] 
 
 type Na = String
+type Mes = String
 
 data Ta = Kaz Int
         | Zyo Char
@@ -33,12 +34,11 @@ data State = State {pl  :: !Ply
 -- ki:genki, mki: max genki, rt: recover time, mrt: max recover time
 data Ply = Ply {pki :: !Int, pmki :: !Int, prt :: !Int, pmrt :: !Int
                ,py :: !Int, px0 :: !Int, px1 :: !Int, pdx :: !Int} deriving (Eq, Show)
-data Enm = Enm {eki :: !Int, emki :: !Int, ert :: !Int, emrt :: !Int
+data Enm = Enm {ena :: !String, eki :: !Int, emki :: !Int, ert :: !Int, emrt :: !Int
                ,ey :: !Int, ex0 :: !Int, ex1 :: !Int, edx :: !Int} deriving (Eq, Show)
 data Bul = Bul {bt :: !Bu,bs :: !Int,by :: !Int,bx :: !Int,bdy :: !Int,bdx :: !Int} 
                                                                        deriving (Eq, Show)
 data Swi = Swi {itm :: !Bool} deriving (Eq, Show)
-data Mes = Mes {ms1 :: !String} deriving (Eq, Show)
 
 type Fun = [T] -> [T] -> State -> (State,Int)
 
@@ -87,7 +87,8 @@ manas = M.fromList [("to",Zyo 't'),("ga",Zyo 'g'),("de",Zyo 'd')
                    ,("hodama",Tam [(Ho,1)]),("mizutama",Tam [(Mi,1)])
                    ,("migi",Hou [(Mg,1)]),("hidari",Hou [(Hd,1)])
                    ,("nageru",Dou ["Tam"] ["Hou","Kaz"] [] [])
-                   ,("ugoku",Dou ["Hou"] ["Kaz"] [] [])]
+                   ,("ugoku",Dou ["Hou"] ["Kaz"] [] [])
+                   ,("miru",Dou [] ["Hou"] [] [])]
 
 toMana :: String -> Maybe Mana
 toMana str = let ta = case toKaz str of
@@ -96,25 +97,22 @@ toMana str = let ta = case toKaz str of
               in (\t -> (Mana (T str t) youM)) <$> ta 
 
 funcName :: M.Map String Fun 
-funcName = M.fromList [("nageru",nageru),("ugoku",ugoku)]
+funcName = M.fromList [("nageru",nageru),("ugoku",ugoku),("miru",miru)]
 
 maxY :: Int
 maxY = 10
 
 initstate :: State 
-initstate = State player [enemy] [] switch message [] 
+initstate = State player [enemy] [] switch "" [] 
 
 player :: Ply
 player = Ply{pki=50, pmki=50, prt=10, pmrt=10, py=0, px0=5, px1=7, pdx=0}
 
 enemy :: Enm
-enemy = Enm{eki=20, emki=20, ert=15, emrt=15, ey=10, ex0=4, ex1=8, edx=0}
+enemy = Enm{ena="douchou", eki=20, emki=20, ert=15, emrt=15, ey=10, ex0=4, ex1=8, edx=0}
 
 switch :: Swi
 switch = Swi{itm=False}
-
-message :: Mes
-message = Mes{ms1=""}
 
 youM :: Y
 youM [] _ = []
@@ -181,7 +179,7 @@ applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) =
       nens = if (tg>=0) then take tg enms ++ [nen] ++ drop (tg+1) enms else enms
       icast = tki > cs
    in if icast then if (tg==(-1)) then nst{pl=(pl nst){pki=tki-cs}} else nst{ens=nens}
-               else st'{mes=Mes "not enough KI!"}
+               else st'{mes="not enough KI!"}
 applyMana st m = st{mns= mns st ++ [m]}
 
 eraseFrom :: Eq a => a -> [a] -> [a]
@@ -192,8 +190,47 @@ eraseFrom t ls = let ind = findIndex (== t) ls
 
 -----
 
+type Seeing = (Int, Int, Int, String) -- y, x, width, name
+type Poslist = [(Int, Int, Int, String)] -- y, x0, x1, name
+
+miru :: Fun
+miru [] [] st = (st{mes=seeToMes$lookingAt Ue cpx 3 1 (makePosLists st)},1)
+  where px0'=px0$pl st; px1'=px1$pl st; cpx=div (px0'+px1') 2
+miru [] ((T _ (Hou hus)):[]) st = (st{mes=seeToMes$lookingAt Ue dlt 3 1 (makePosLists st)},abs dlt)
+  where (_,dlt) = calcDelta hus 1
+miru _ _ st = (st,0)
+
+makePosLists :: State -> Poslist 
+makePosLists st = [(py$pl st, px0$pl st, px1$pl st, "player")]++
+                  (map (\(Enm ena' _ _ _ _ ey' ex0' ex1' _) -> (ey',ex0',ex1',ena')) (ens st))
+
+lookingAt :: Dr -> Int -> Int -> Int -> Poslist -> [Seeing]
+lookingAt Ue ci wi fi psls = seeking 1 maxY ci wi fi psls
+lookingAt Si ci wi fi psls = seeking (-1) 0 ci wi fi psls
+lookingAt _ _ _ _ _ = []
+
+seeking :: Int -> Int -> Int -> Int -> Int -> Poslist -> [Seeing]
+seeking dr toi ci wi fri psls  
+  | toi+dr == fri = []
+  | otherwise = (foldl (\acc (y,x0,x1,na) -> let (cn,wd) = coinCide (x0,x1) (ci-wi,ci+wi) in 
+      if(fri==y && (cn,wd)/=(0,0)) then acc++[(y,cn,wd,na)] else acc) [] psls)++
+        seeking dr toi ci (wi+1) (fri+dr) psls
+
+coinCide :: (Int, Int) -> (Int, Int) -> (Int, Int) 
+coinCide (x0,x1) (x2,x3) =
+  let s1 = [x0..x1]; s2 = [x2..x3]
+      un = intersect s1 s2
+   in if (un==[]) then (0,0) else let h = head un
+                                      l = last un
+                                   in (div (h+l) 2,l-h)
+
+seeToMes :: [Seeing] -> String
+seeToMes sis = concat$map (\(y,c,w,n) -> "dist: "++(show y)++" dir: "++
+  (if (c>0) then "migi" else if (c<0) then "hidari" else "manaka")++(show c)++
+    " haba"++(show w)++"---"++n++"\n") sis
+
 ugoku :: Fun
-ugoku [] _ st = (st{mes=Mes "No Direction"},0)
+ugoku [] _ st = (st{mes="No Direction"},0)
 ugoku ((T _ (Hou hus)):[]) [] st = (st{pl=(pl st){pdx=dlt}},abs dlt)
   where (_,dlt) = calcDelta hus 1
 ugoku ((T _ (Hou hus)):[]) ((T _ (Kaz kz)):[]) st = (st{pl=(pl st){pdx=dlt*sp}},(abs dlt)*sp)
@@ -201,7 +238,7 @@ ugoku ((T _ (Hou hus)):[]) ((T _ (Kaz kz)):[]) st = (st{pl=(pl st){pdx=dlt*sp}},
 ugoku _ _ st = (st,0)
 
 nageru :: Fun
-nageru [] _ st = (st{mes=Mes "No Tama"},0)
+nageru [] _ st = (st{mes="No Tama"},0)
 nageru ((T _ (Tam tm)):[]) [] st = (st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm [] 1 (getPlp st) 
 nageru ((T _ (Tam tm)):[]) ((T _ (Hou hus)):[]) st = (st{tms=(tms st)++(fst mkb)},snd mkb)
