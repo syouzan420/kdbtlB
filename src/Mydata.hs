@@ -26,7 +26,6 @@ data Ta = Kaz Int
 data State = State {pl  :: !Ply
                    ,ens :: ![Enm]
                    ,tms  :: ![Bul]
-                   ,sw  :: !Swi
                    ,mes :: !Mes
                    ,mns :: ![Mana]
                    } deriving (Eq, Show)
@@ -38,7 +37,6 @@ data Enm = Enm {ena :: !String, eki :: !Int, emki :: !Int, ert :: !Int, emrt :: 
                ,ey :: !Int, ex0 :: !Int, ex1 :: !Int, edx :: !Int} deriving (Eq, Show)
 data Bul = Bul {bt :: !Bu,bs :: !Int,by :: !Int,bx :: !Int,bdy :: !Int,bdx :: !Int} 
                                                                        deriving (Eq, Show)
-data Swi = Swi {itm :: !Bool} deriving (Eq, Show)
 
 type Fun = [T] -> [T] -> State -> (State,Int)
 
@@ -103,16 +101,13 @@ maxY :: Int
 maxY = 10
 
 initstate :: State 
-initstate = State player [enemy] [] switch "" [] 
+initstate = State player [enemy] [] "" [] 
 
 player :: Ply
 player = Ply{pki=50, pmki=50, prt=10, pmrt=10, py=0, px0=5, px1=7, pdx=0}
 
 enemy :: Enm
 enemy = Enm{ena="douchou", eki=20, emki=20, ert=15, emrt=15, ey=10, ex0=4, ex1=8, edx=0}
-
-switch :: Swi
-switch = Swi{itm=False}
 
 youM :: Y
 youM [] _ = []

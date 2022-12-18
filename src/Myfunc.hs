@@ -14,11 +14,11 @@ makeState st [] = st
 makeState st (mn:manas) = makeState (applyMana st mn) manas 
 
 doWithTime :: State -> State 
-doWithTime (State p es ts s ms manas) =
+doWithTime (State p es ts ms manas) =
   let (ms',np,ts1) = changePly ms p ts []
       (ms'',nes,ts2) = changeEnms ms' es ts1 [] []
       (ms''',ts3) = changeBuls ms'' ts2 []
-   in State np nes ts3 s ms''' manas
+   in State np nes ts3 ms''' manas
 
 changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
