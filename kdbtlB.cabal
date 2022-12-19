@@ -27,6 +27,7 @@ library
   exposed-modules:
       Myapp
       Mydata
+      Mydous
       Myfunc
   other-modules:
       Paths_kdbtlB

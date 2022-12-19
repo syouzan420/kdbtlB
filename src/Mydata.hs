@@ -1,9 +1,9 @@
 
 module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes
-             ,toMana, applyMana, initstate, (.>), maxY) where
+             ,T(..), Ta(..), Bu, Dr(..), Fun, toMana, initstate, (.>), maxY) where
 
 import qualified Data.Map.Strict as M
-import Data.List (findIndex, isInfixOf, intersect)
+import Data.List (findIndex, isInfixOf)
 import Data.List.Split (splitOn)
 
 
@@ -32,9 +32,9 @@ data State = State {pl  :: !Ply
 
 -- ki:genki, mki: max genki, rt: recover time, mrt: max recover time
 data Ply = Ply {pki :: !Int, pmki :: !Int, prt :: !Int, pmrt :: !Int
-               ,py :: !Int, px0 :: !Int, px1 :: !Int, pdx :: !Int} deriving (Eq, Show)
+               ,py :: !Int, px :: !Int, pw :: !Int, pdx :: !Int} deriving (Eq, Show)
 data Enm = Enm {ena :: !String, eki :: !Int, emki :: !Int, ert :: !Int, emrt :: !Int
-               ,ey :: !Int, ex0 :: !Int, ex1 :: !Int, edx :: !Int} deriving (Eq, Show)
+               ,ey :: !Int, ex :: !Int, ew :: !Int, edx :: !Int} deriving (Eq, Show)
 data Bul = Bul {bt :: !Bu,bs :: !Int,by :: !Int,bx :: !Int,bdy :: !Int,bdx :: !Int} 
                                                                        deriving (Eq, Show)
 
@@ -94,9 +94,6 @@ toMana str = let ta = case toKaz str of
                         Nothing -> M.lookup str manas
               in (\t -> (Mana (T str t) youM)) <$> ta 
 
-funcName :: M.Map String Fun 
-funcName = M.fromList [("nageru",nageru),("ugoku",ugoku),("miru",miru)]
-
 maxY :: Int
 maxY = 10
 
@@ -104,10 +101,10 @@ initstate :: State
 initstate = State player [enemy] [] "" [] 
 
 player :: Ply
-player = Ply{pki=50, pmki=50, prt=10, pmrt=10, py=0, px0=5, px1=7, pdx=0}
+player = Ply{pki=50, pmki=50, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0}
 
 enemy :: Enm
-enemy = Enm{ena="douchou", eki=20, emki=20, ert=15, emrt=15, ey=10, ex0=4, ex1=8, edx=0}
+enemy = Enm{ena="douchou", eki=20, emki=20, ert=15, emrt=15, ey=10, ex=0, ew=2, edx=0}
 
 youM :: Y
 youM [] _ = []
@@ -158,25 +155,6 @@ makeDou d@(T na (Dou ca cb t1 t2)) tal@(t3@(T nat ta):ts)
     where cstr = toConstr ta
 makeDou _ ts = ts
 
-applyMana :: State -> Mana -> State
-applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) = 
-  let nam = head$words na
-      nms = splitOn "*" nam
-      tg = if (length nms==1) then (-1) else (read (last nms))::Int
-      fnc = M.lookup (head nms) funcName
-      st' = st{mns = mns st ++ [m]}
-      (nst,cs) = case fnc of
-                    Nothing -> (st',0)
-                    Just f  -> f ts1 ts2 st'
-      enms = ens nst
-      tki = if (tg==(-1)) then pki$pl$nst else eki$enms!!tg
-      nen = if (tg>=0) then (enms!!tg){eki=tki-cs} else enms!!0 
-      nens = if (tg>=0) then take tg enms ++ [nen] ++ drop (tg+1) enms else enms
-      icast = tki > cs
-   in if icast then if (tg==(-1)) then nst{pl=(pl nst){pki=tki-cs}} else nst{ens=nens}
-               else st'{mes="not enough KI!"}
-applyMana st m = st{mns= mns st ++ [m]}
-
 eraseFrom :: Eq a => a -> [a] -> [a]
 eraseFrom t ls = let ind = findIndex (== t) ls
                   in case ind of
@@ -185,81 +163,3 @@ eraseFrom t ls = let ind = findIndex (== t) ls
 
 -----
 
-type Seeing = (Int, Int, Int, String) -- y, x, width, name
-type Poslist = [(Int, Int, Int, String)] -- y, x0, x1, name
-
-miru :: Fun
-miru [] [] st = (st{mes=seeToMes$lookingAt Ue cpx 3 1 (makePosLists st)},1)
-  where px0'=px0$pl st; px1'=px1$pl st; cpx=div (px0'+px1') 2
-miru [] ((T _ (Hou hus)):[]) st = (st{mes=seeToMes$lookingAt Ue dlt 3 1 (makePosLists st)},abs dlt)
-  where (_,dlt) = calcDelta hus 1
-miru _ _ st = (st,0)
-
-makePosLists :: State -> Poslist 
-makePosLists st = [(py$pl st, px0$pl st, px1$pl st, "player")]++
-                  (map (\(Enm ena' _ _ _ _ ey' ex0' ex1' _) -> (ey',ex0',ex1',ena')) (ens st))
-
-lookingAt :: Dr -> Int -> Int -> Int -> Poslist -> [Seeing]
-lookingAt Ue ci wi fi psls = seeking 1 maxY ci wi fi psls
-lookingAt Si ci wi fi psls = seeking (-1) 0 ci wi fi psls
-lookingAt _ _ _ _ _ = []
-
-seeking :: Int -> Int -> Int -> Int -> Int -> Poslist -> [Seeing]
-seeking dr toi ci wi fri psls  
-  | toi+dr == fri = []
-  | otherwise = (foldl (\acc (y,x0,x1,na) -> let (cn,wd) = coinCide (x0,x1) (ci-wi,ci+wi) in 
-      if(fri==y && (cn,wd)/=(0,0)) then acc++[(y,cn,wd,na)] else acc) [] psls)++
-        seeking dr toi ci (wi+1) (fri+dr) psls
-
-coinCide :: (Int, Int) -> (Int, Int) -> (Int, Int) 
-coinCide (x0,x1) (x2,x3) =
-  let s1 = [x0..x1]; s2 = [x2..x3]
-      un = intersect s1 s2
-   in if (un==[]) then (0,0) else let h = head un
-                                      l = last un
-                                   in (div (h+l) 2,l-h)
-
-seeToMes :: [Seeing] -> String
-seeToMes sis = concat$map (\(y,c,w,n) -> "dist: "++(show y)++" dir: "++
-  (if (c>0) then "migi" else if (c<0) then "hidari" else "manaka")++(show c)++
-    " haba"++(show w)++"---"++n++"\n") sis
-
-ugoku :: Fun
-ugoku [] _ st = (st{mes="No Direction"},0)
-ugoku ((T _ (Hou hus)):[]) [] st = (st{pl=(pl st){pdx=dlt}},abs dlt)
-  where (_,dlt) = calcDelta hus 1
-ugoku ((T _ (Hou hus)):[]) ((T _ (Kaz kz)):[]) st = (st{pl=(pl st){pdx=dlt*sp}},(abs dlt)*sp)
-  where (sp,dlt) = calcDelta hus kz 
-ugoku _ _ st = (st,0)
-
-nageru :: Fun
-nageru [] _ st = (st{mes="No Tama"},0)
-nageru ((T _ (Tam tm)):[]) [] st = (st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm [] 1 (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Hou hus)):[]) st = (st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm hus 1 (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):[]) st = (st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm [] kz (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Hou hus)):(T _ (Kaz kz)):[]) st = (st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm hus kz (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):(T _ (Hou hus)):[]) st = (st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm hus kz (getPlp st) 
-nageru _ _ st = (st,0)
-
-makeBullets :: [(Bu,Int)] -> [(Dr,Int)] -> Int -> (Int, Int, Int) -> ([Bul],Int)
-makeBullets [] _ _ _ = ([],0)
-makeBullets ((b,s):bss) hus sp (y,x0,x1) = 
-  let (dy, dx) = calcDelta hus sp
-   in ((Bul{bt=b, bs=s, by=y, bx=(x0+x1) `div` 2, bdy=dy, bdx=dx}):(fst mkb),(s*sp)+(snd mkb))
-  where mkb = makeBullets bss hus sp (y,x0,x1)
-
-getPlp :: State -> (Int, Int, Int)
-getPlp st = let p = pl st in (py p, px0 p, px1 p)
-
-calcDelta :: [(Dr,Int)] -> Int -> (Int, Int)
-calcDelta hus sp = (sp, calcDx hus)
-  where calcDx [] = 0
-        calcDx ((dir,i):hs) 
-          | dir==Mg = i + calcDx hs
-          | dir==Hd = (-i) + calcDx hs
-          | otherwise = calcDx hs
