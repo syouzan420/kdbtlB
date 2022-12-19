@@ -1,12 +1,22 @@
-module Mydous(applyMana) where
+module Mydous(exeCom) where
 
 import qualified Data.Map.Strict as M
 import Data.List (intersect)
 import Data.List.Split (splitOn)
 import Mydata(T(..),Ta(..),Mana(..),State(..),Dr(..)
-             ,Bu,Fun,Bul(..),Ply(..),Enm(..),maxY)
+             ,Bu,Fun,Bul(..),Ply(..),Enm(..),(.>),toMana,maxY)
 
 type Pos = (Int, Int, Int, String) -- y, x, width, name
+
+exeCom :: String -> State -> State 
+exeCom com s = let coms =  words com
+                   manas = map toMana coms
+                   res = foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) [] manas
+                in if (res==[]) then s{mes=mes s++"ERROR!!\n"} else makeState s{mns=[]} res
+
+makeState :: State -> [Mana] -> State
+makeState st [] = st
+makeState st (mn:manas) = makeState (applyMana st mn) manas 
 
 applyMana :: State -> Mana -> State
 applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) = 

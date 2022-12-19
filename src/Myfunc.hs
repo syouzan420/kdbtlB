@@ -1,18 +1,6 @@
-module Myfunc(exeCom, doWithTime) where
+module Myfunc(doWithTime) where
 
-import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Mes
-             ,toMana, (.>), maxY)
-import Mydous(applyMana)
-
-exeCom :: String -> State -> Maybe State 
-exeCom com s = let coms =  words com
-                   manas = map toMana coms
-                   res = foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) [] manas
-                in if (res==[]) then Nothing else Just (makeState s{mns=[]} res)
-
-makeState :: State -> [Mana] -> State
-makeState st [] = st
-makeState st (mn:manas) = makeState (applyMana st mn) manas 
+import Mydata(State(..), Ply(..), Enm(..), Bul(..), Mes, maxY)
 
 doWithTime :: State -> State 
 doWithTime (State p es ts ms manas) =

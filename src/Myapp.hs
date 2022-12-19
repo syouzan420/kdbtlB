@@ -17,8 +17,9 @@ import Brick.Types (Widget(..), EventM, BrickEvent(..), ViewportType(..))
 import Brick.Widgets.Core (str, strWrap, (<+>), (<=>), hLimit, vLimit, viewport)
 import Brick.Widgets.Edit as E
 import Brick.Widgets.Center as C
-import Mydata(State(..), initstate)
-import Myfunc(exeCom, doWithTime)
+import Mydata(State(..),initstate)
+import Myfunc(doWithTime)
+import Mydous(exeCom)
 
 data Name = Edit | View | Coma | Mess deriving (Ord, Show, Eq)
 
@@ -71,10 +72,9 @@ appEvent e =
           ed <- use edit
           let con = E.getEditContents ed
               com = unlines con
-              s' = exeCom com st
-          case s' of
-            Nothing -> mslog %= (++"Error!") >> state .= st{mes=(mes st)++"Error!\n"}
-            Just js -> state .= js
+              nst = exeCom com st
+          state .= nst
+          mslog .= mes nst
           cmlog %= (++com)
           edit .= E.editor Edit (Just 1) ""
           vScrollToEnd cmScroll
@@ -83,7 +83,7 @@ appEvent e =
           st <- use state 
           let nst = doWithTime st
           state .= nst 
-          mslog .= (mes st)
+          mslog .= mes st
           if (st/=nst) then stlog %= (++(show nst)++"\n") else return ()
           vScrollToEnd vpScroll
         ev -> zoom edit $ E.handleEditorEvent ev 
