@@ -49,7 +49,7 @@ miru _ _ st = (st,0)
 
 makePosLists :: State -> [Pos] 
 makePosLists st = [(py$pl st, px$pl st, pw$pl st, "player")]++
-                  (map (\(Enm ena' _ _ _ _ ey' ex' ew' _) -> (ey',ex',ew',ena')) (ens st))
+                  (map (\(Enm ena' _ _ _ _ ey' ex' ew' _ _) -> (ey',ex',ew',ena')) (ens st))
 
 lookingAt :: Dr -> Int -> Int -> Int -> [Pos] -> [Pos]
 lookingAt Ue ci wi fi psls = seeking 1 maxY ci wi fi psls

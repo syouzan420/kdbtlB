@@ -34,7 +34,7 @@ changeEnms :: Mes -> [Enm] -> [Bul] -> [Enm] -> [Bul] -> (Mes,[Enm],[Bul])
 changeEnms m [] bls enms _ = (m, enms, bls)
 changeEnms m (e:es) [] enms [] = changeEnms m es [] (enms++[normalEnm e]) []
 changeEnms m (e:es) [] enms bls = changeEnms m es bls (enms++[e]) []
-changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx'):es) (b@(Bul _ bs' by' bx' bdy' _):bss) enms bls =
+changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es) (b@(Bul _ bs' by' bx' bdy' _):bss) enms bls =
   if (bdy'>0 && by'>=ey' && bx'>=ex'-ew' && bx'<=ex'+ew') 
      then let neki = eki' - bs'
            in if (neki > 0) 
@@ -45,7 +45,7 @@ changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx'):es) (b@(Bul _ bs' by' bx'
                           where dr=if(edx'>0) then 1 else if(edx'<0) then (-1) else 0
 
 normalEnm :: Enm -> Enm 
-normalEnm e@(Enm _ eki' emki' ert' emrt' _ ex' _ edx') =
+normalEnm e@(Enm _ eki' emki' ert' emrt' _ ex' _ edx' _) =
   if(edx'==0) then
     if(ert'<0 && eki'<emki') then e{eki=eki'+1,ert=emrt'}
                              else if(eki'<emki') then e{ert=ert'-1} else e
