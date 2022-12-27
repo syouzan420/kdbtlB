@@ -12,7 +12,8 @@ exeCom :: String -> State -> State
 exeCom com s = let coms =  words com
                    manas = map toMana coms
                    res = foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) [] manas
-                in if (res==[]) then s{mes=mes s++"ERROR!!\n"} else makeState s{mns=[]} res
+                in if (res==[]) then s{mes=mes s++"ERROR!!\n"} 
+                                else makeState s{pl=(pl s){ing=False},mns=[]} res
 
 makeState :: State -> [Mana] -> State
 makeState st [] = st
@@ -86,17 +87,22 @@ ugoku _ _ st = (st,0)
 
 nageru :: Fun
 nageru [] _ st = (st{mes="No Tama"},0)
-nageru ((T _ (Tam tm)):[]) [] st = (st{tms=(tms st)++(fst mkb)},snd mkb)
+nageru ((T _ (Tam tm)):[]) [] st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm [] 1 (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Hou hus)):[]) st = (st{tms=(tms st)++(fst mkb)},snd mkb)
+nageru ((T _ (Tam tm)):[]) ((T _ (Hou hus)):[]) st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm hus 1 (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):[]) st = (st{tms=(tms st)++(fst mkb)},snd mkb)
+nageru ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):[]) st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm [] kz (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Hou hus)):(T _ (Kaz kz)):[]) st = (st{tms=(tms st)++(fst mkb)},snd mkb)
+nageru ((T _ (Tam tm)):[]) ((T _ (Hou hus)):(T _ (Kaz kz)):[]) st =
+                                          (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm hus kz (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):(T _ (Hou hus)):[]) st = (st{tms=(tms st)++(fst mkb)},snd mkb)
+nageru ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):(T _ (Hou hus)):[]) st =
+                                          (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm hus kz (getPlp st) 
 nageru _ _ st = (st,0)
+
+mNage :: State -> State
+mNage st = st{pl=(pl st){ing=True}}
 
 makeBullets :: [(Bu,Int)] -> [(Dr,Int)] -> Int -> (Int, Int) -> ([Bul],Int)
 makeBullets [] _ _ _ = ([],0)

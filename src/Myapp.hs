@@ -7,6 +7,7 @@ import Lens.Micro ((^.))
 import Lens.Micro.TH (makeLenses)
 import Lens.Micro.Mtl ((%=),(.=),zoom,use)
 import Control.Monad (void,forever)
+import Control.Monad.IO.Class (liftIO)
 import Control.Concurrent (threadDelay,forkIO)
 import qualified Graphics.Vty as V
 import Brick.BChan (newBChan, writeBChan)
@@ -81,7 +82,7 @@ appEvent e =
           vScrollToEnd msScroll
         AppEvent Logstate -> do
           st <- use state 
-          let nst = doWithTime st
+          nst <- liftIO$doWithTime st
           state .= nst 
           mslog .= mes st
           if (st/=nst) then stlog %= (++(show nst)++"\n") else return ()

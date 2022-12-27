@@ -1,17 +1,22 @@
 module Myfunc(doWithTime) where
 
+import System.Random(randomRIO)
 import Mydata(State(..), Ply(..), Enm(..), Bul(..), Mes, maxY)
+import Myenai(enmAi)
 
-doWithTime :: State -> State 
-doWithTime (State p es ts ms manas) =
-  let (ms',np,ts1) = changePly ms p ts []
-      (ms'',nes,ts2) = changeEnms ms' es ts1 [] []
-      (ms''',ts3) = changeBuls ms'' ts2 []
-   in State np nes ts3 ms''' manas
+doWithTime :: State -> IO State 
+doWithTime (State p es ts ms manas) = do
+  pr <- randomRIO (0::Int,99)
+  let ipn = ing p
+      (ms_p,np,ts_p) = changePly ms p ts []
+      (ms_a,es_a) = enmAi ms_p ipn pr np es []
+      (ms_e,nes,ts_e) = changeEnms ms_a es_a ts_p [] []
+      (nms,nts) = changeBuls ms_e ts_e []
+  return (State np nes nts nms manas)
 
 changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
-changePly m p@(Ply pki' _ _ _ py' px' pw' pdx') (b@(Bul _ bs' by' bx' bdy' _):bss) bls =
+changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _) (b@(Bul _ bs' by' bx' bdy' _):bss) bls =
   if (bdy'<0 && by'<=py' && bx'>=px'-pw' && bx'<=px'+pw') 
      then let npki = pki' - bs'
            in if (npki > 0)
@@ -22,7 +27,7 @@ changePly m p@(Ply pki' _ _ _ py' px' pw' pdx') (b@(Bul _ bs' by' bx' bdy' _):bs
                           where dr=if(pdx'>0) then 1 else if(pdx'<0) then (-1) else 0
 
 normalPly :: Ply -> Ply
-normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx') =
+normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx' _) =
   if(pdx'==0) then
     if(prt'<0 && pki'<pmki') then p{pki=pki'+1,prt=pmrt'}
                              else if(pki'<pmki') then p{prt=prt'-1} else p

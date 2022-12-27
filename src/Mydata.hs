@@ -1,5 +1,5 @@
 
-module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes
+module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes, Eai(..)
              ,T(..), Ta(..), Bu, Dr(..), Fun, toMana, initstate, (.>), maxY) where
 
 import qualified Data.Map.Strict as M
@@ -32,18 +32,23 @@ data State = State {pl  :: !Ply
 
 -- ki:genki, mki: max genki, rt: recover time, mrt: max recover time
 data Ply = Ply {pki :: !Int, pmki :: !Int, prt :: !Int, pmrt :: !Int
-               ,py :: !Int, px :: !Int, pw :: !Int, pdx :: !Int} deriving (Eq, Show)
+               ,py :: !Int, px :: !Int, pw :: !Int, pdx :: !Int, ing :: !Bool} deriving (Eq, Show)
 data Enm = Enm {ena :: !String, eki :: !Int, emki :: !Int, ert :: !Int, emrt :: !Int
                ,ey :: !Int, ex :: !Int, ew :: !Int, edx :: !Int, eai :: !Eai} deriving (Eq, Show)
 data Bul = Bul {bt :: !Bu,bs :: !Int,by :: !Int,bx :: !Int,bdy :: !Int,bdx :: !Int} 
                                                                        deriving (Eq, Show)
 
--- plp: player position (y,x,w) , tic: elasped time after recognizing the player
+-- plp: player position (y,x,w)
+-- atm: max action time
+-- atn: action time number
+-- tic: elasped time after recognizing the player
+-- dam: max danger level
 -- dan: danger level (knowing the player shot bullets and feel like moving)
 -- ipr: initial probability (for choosing acts)
--- spr: probabilty after seeing, apr: probability after knowing the player attack
-data Eai = Eai {plp :: !(Maybe (Int,Int,Int)), tic :: !Int, dan :: !Int
-               ,ipr :: !(M.Map String Int), spr :: !(M.Map String Int), apr :: !(M.Map String Int)}
+-- spr: probabilty after seeing
+data Eai = Eai {plp :: !(Maybe (Int,Int,Int)), atm :: !Int, atn :: !Int
+               ,tic :: !Int, dam :: !Int, dan :: !Int
+               ,ipr :: !(M.Map String Int), spr :: !(M.Map String Int)}
                                                                       deriving (Eq, Show)
 
 type Fun = [T] -> [T] -> State -> (State,Int)
@@ -109,14 +114,13 @@ initstate :: State
 initstate = State player [enemy] [] "" [] 
 
 player :: Ply
-player = Ply{pki=50, pmki=50, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0}
+player = Ply{pki=50, pmki=50, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0, ing=False}
 
 enemy :: Enm
 enemy = Enm{ena="douchou", eki=20, emki=20, ert=15, emrt=15, ey=10, ex=0, ew=2, edx=0, eai=eai0}
 
 eai0 :: Eai
-eai0 = Eai{plp=Nothing, tic=0, dan=0, ipr=makeProb 80 10 10, spr=makeProb 10 10 80
-          ,apr=makeProb 10 80 10}
+eai0 = Eai{plp=Nothing, atm=5, atn=5, tic=0, dam=10, dan=0, ipr=makeProb 80 10 10, spr=makeProb 10 10 80}
 
 makeProb :: Int -> Int -> Int -> M.Map String Int
 makeProb a b c = M.fromList [("miru",a),("ugoku",b),("nageru",c)]

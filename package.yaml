@@ -28,6 +28,7 @@ dependencies:
 - microlens-th
 - microlens-mtl
 - vty
+- random
 
 ghc-options:
 - -Wall
