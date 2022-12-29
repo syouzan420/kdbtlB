@@ -51,7 +51,7 @@ data Eai = Eai {plp :: !(Maybe (Int,Int,Int)), atm :: !Int, atn :: !Int
                ,ipr :: !(M.Map String Int), spr :: !(M.Map String Int)}
                                                                       deriving (Eq, Show)
 
-type Fun = [T] -> [T] -> State -> (State,Int)
+type Fun = Int -> [T] -> [T] -> State -> (State,Int)
 
 data Bu = Ho | Mi deriving (Eq, Show)           -- Tama Type Hodama, Mizutama
 data Dr = Mg | Hd | Ue | Si deriving (Eq, Show) -- Direction Migi, Hidari, Ue, Sita

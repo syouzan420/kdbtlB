@@ -28,7 +28,7 @@ applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) =
       st' = st{mns = mns st ++ [m]}
       (nst,cs) = case fnc of
                     Nothing -> (st',0)
-                    Just f  -> f ts1 ts2 st'
+                    Just f  -> f tg ts1 ts2 st'
       enms = ens nst
       tki = if (tg==(-1)) then pki$pl$nst else eki$enms!!tg
       nen = if (tg>=0) then (enms!!tg){eki=tki-cs} else enms!!0 
@@ -43,10 +43,10 @@ funcName :: M.Map String Fun
 funcName = M.fromList [("nageru",nageru),("ugoku",ugoku),("miru",miru)]
 
 miru :: Fun
-miru [] [] st = (st{mes=seeToMes$lookingAt Ue (px$pl st) 1 1 (makePosLists st)},1)
-miru [] ((T _ (Hou hus)):[]) st = (st{mes=seeToMes$lookingAt Ue dlt 3 1 (makePosLists st)},abs dlt)
+miru tg [] [] st = (st{mes=seeToMes$lookingAt Ue (px$pl st) 1 1 (makePosLists st)},1)
+miru tg [] ((T _ (Hou hus)):[]) st = (st{mes=seeToMes$lookingAt Ue dlt 3 1 (makePosLists st)},abs dlt)
   where (_,dlt) = calcDelta hus 1
-miru _ _ st = (st,0)
+miru _ _ _ st = (st,0)
 
 makePosLists :: State -> [Pos] 
 makePosLists st = [(py$pl st, px$pl st, pw$pl st, "player")]++
@@ -78,28 +78,28 @@ seeToMes sis = concat$map (\(y,c,w,n) -> "dist: "++(show y)++" dir: "++
     " haba"++(show w)++"---"++n++"\n") sis
 
 ugoku :: Fun
-ugoku [] _ st = (st{mes="No Direction"},0)
-ugoku ((T _ (Hou hus)):[]) [] st = (st{pl=(pl st){pdx=dlt}},abs dlt)
+ugoku tg [] _ st = (st{mes="No Direction"},0)
+ugoku tg ((T _ (Hou hus)):[]) [] st = (st{pl=(pl st){pdx=dlt}},abs dlt)
   where (_,dlt) = calcDelta hus 1
-ugoku ((T _ (Hou hus)):[]) ((T _ (Kaz kz)):[]) st = (st{pl=(pl st){pdx=dlt*sp}},(abs dlt)*sp)
+ugoku tg ((T _ (Hou hus)):[]) ((T _ (Kaz kz)):[]) st = (st{pl=(pl st){pdx=dlt*sp}},(abs dlt)*sp)
   where (sp,dlt) = calcDelta hus kz 
-ugoku _ _ st = (st,0)
+ugoku _ _ _ st = (st,0)
 
 nageru :: Fun
-nageru [] _ st = (st{mes="No Tama"},0)
-nageru ((T _ (Tam tm)):[]) [] st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
+nageru tg [] _ st = (st{mes="No Tama"},0)
+nageru tg ((T _ (Tam tm)):[]) [] st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm [] 1 (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Hou hus)):[]) st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
+nageru tg ((T _ (Tam tm)):[]) ((T _ (Hou hus)):[]) st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm hus 1 (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):[]) st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
+nageru tg ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):[]) st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm [] kz (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Hou hus)):(T _ (Kaz kz)):[]) st =
+nageru tg ((T _ (Tam tm)):[]) ((T _ (Hou hus)):(T _ (Kaz kz)):[]) st =
                                           (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm hus kz (getPlp st) 
-nageru ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):(T _ (Hou hus)):[]) st =
+nageru tg ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):(T _ (Hou hus)):[]) st =
                                           (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
   where mkb = makeBullets tm hus kz (getPlp st) 
-nageru _ _ st = (st,0)
+nageru _ _ _ st = (st,0)
 
 mNage :: State -> State
 mNage st = st{pl=(pl st){ing=True}}

@@ -6,11 +6,10 @@ import Myenai(enmAi)
 
 doWithTime :: State -> IO State 
 doWithTime (State p es ts ms manas) = do
-  pr <- randomRIO (0::Int,99)
-  let ipn = ing p
-      (ms_p,np,ts_p) = changePly ms p ts []
-      (ms_a,es_a) = enmAi ms_p ipn pr np es []
-      (ms_e,nes,ts_e) = changeEnms ms_a es_a ts_p [] []
+  prs <- sequence$replicate (length es) (randomRIO (0::Int,99))
+  let (ms_p,np,ts_p) = changePly ms p ts []
+      (ms_a,eman) = enmAi ms_p (ing p) prs es 0 []
+      (ms_e,nes,ts_e) = changeEnms ms_a es ts_p [] []
       (nms,nts) = changeBuls ms_e ts_e []
   return (State np nes nts nms manas)
 
