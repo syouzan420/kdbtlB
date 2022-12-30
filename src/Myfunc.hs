@@ -2,14 +2,15 @@ module Myfunc(doWithTime) where
 
 import System.Random(randomRIO)
 import Mydata(State(..), Ply(..), Enm(..), Bul(..), Mes, maxY)
-import Myenai(enmAi)
+import Myenai(enmAi,enTick)
 
 doWithTime :: State -> IO State 
 doWithTime (State p es ts ms manas) = do
   prs <- sequence$replicate (length es) (randomRIO (0::Int,99))
   let (ms_p,np,ts_p) = changePly ms p ts []
       (ms_a,eman) = enmAi ms_p (ing p) prs es 0 []
-      (ms_e,nes,ts_e) = changeEnms ms_a es ts_p [] []
+      es_e = enTick es
+      (ms_e,nes,ts_e) = changeEnms ms_a es_e ts_p [] []
       (nms,nts) = changeBuls ms_e ts_e []
   return (State np nes nts nms manas)
 

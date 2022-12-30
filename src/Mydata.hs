@@ -1,6 +1,6 @@
 
 module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes, Eai(..)
-             ,T(..), Ta(..), Bu, Dr(..), Fun, toMana, initstate, (.>), maxY) where
+             ,T(..), Ta(..), Bu, Dr(..), Fun, toMana, initstate, (.>), maxY, youM) where
 
 import qualified Data.Map.Strict as M
 import Data.List (findIndex, isInfixOf)
@@ -120,7 +120,7 @@ enemy :: Enm
 enemy = Enm{ena="douchou", eki=20, emki=20, ert=15, emrt=15, ey=10, ex=0, ew=2, edx=0, eai=eai0}
 
 eai0 :: Eai
-eai0 = Eai{plp=Nothing, atm=5, atn=5, tic=0, dam=10, dan=0, ipr=makeProb 80 10 10, spr=makeProb 10 10 80}
+eai0 = Eai{plp=Nothing, atm=5, atn=0, tic=0, dam=10, dan=0, ipr=makeProb 80 10 10, spr=makeProb 10 10 80}
 
 makeProb :: Int -> Int -> Int -> M.Map String Int
 makeProb a b c = M.fromList [("miru",a),("ugoku",b),("nageru",c)]
