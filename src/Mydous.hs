@@ -1,10 +1,10 @@
-module Mydous(exeCom) where
+module Mydous(exeCom,applyMana) where
 
 import qualified Data.Map.Strict as M
 import Data.List (intersect)
 import Data.List.Split (splitOn)
 import Mydata(T(..),Ta(..),Mana(..),State(..),Dr(..)
-             ,Bu,Fun,Bul(..),Ply(..),Enm(..),(.>),toMana,maxY)
+             ,Bu,Fun,Bul(..),Ply(..),Enm(..),Eai(..),(.>),toMana,maxY)
 
 type Pos = (Int, Int, Int, String) -- y, x, width, name
 
@@ -43,10 +43,22 @@ funcName :: M.Map String Fun
 funcName = M.fromList [("nageru",nageru),("ugoku",ugoku),("miru",miru)]
 
 miru :: Fun
-miru tg [] [] st = (st{mes=seeToMes$lookingAt Ue (px$pl st) 1 1 (makePosLists st)},1)
+miru tg [] [] st 
+  | tg==(-1) = (st{mes=seeToMes$lookingAt Ue (px$pl st) 1 1 (makePosLists st)},1)
+  | otherwise = let ens' = ens st
+                    e = ens'!!tg
+                    nplp = lookPlayer$lookingAt Si (ex e) 1 1 (makePosLists st)
+                    ne = e{eai=(eai e){plp=nplp}}
+                    nens = take tg ens' ++ [ne] ++ drop (tg+1) ens'
+                 in (st{ens=nens},1)
 miru tg [] ((T _ (Hou hus)):[]) st = (st{mes=seeToMes$lookingAt Ue dlt 3 1 (makePosLists st)},abs dlt)
   where (_,dlt) = calcDelta hus 1
 miru _ _ _ st = (st,0)
+
+lookPlayer :: [Pos] -> Maybe (Int, Int, Int)
+lookPlayer [] = Nothing
+lookPlayer ((y,x,w,"player"):_) = Just (y,x,w)
+lookPlayer (_:ps) = lookPlayer ps
 
 makePosLists :: State -> [Pos] 
 makePosLists st = [(py$pl st, px$pl st, pw$pl st, "player")]++

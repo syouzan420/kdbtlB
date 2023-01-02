@@ -1,6 +1,6 @@
 
 module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes, Eai(..)
-             ,T(..), Ta(..), Bu, Dr(..), Fun, toMana, initstate, (.>), maxY, youM) where
+             ,T(..), Ta(..), Bu(..), Dr(..), Fun, toMana, initstate, (.>), maxY, youM) where
 
 import qualified Data.Map.Strict as M
 import Data.List (findIndex, isInfixOf)

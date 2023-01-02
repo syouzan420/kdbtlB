@@ -113,7 +113,7 @@ appMain = do
 
     void $ forkIO $ forever $ do
         writeBChan chan Logstate 
-        threadDelay 500000
+        threadDelay 5000000
 
     let buildVty = V.mkVty V.defaultConfig
     initialVty <- buildVty

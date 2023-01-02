@@ -1,18 +1,25 @@
 module Myfunc(doWithTime) where
 
 import System.Random(randomRIO)
-import Mydata(State(..), Ply(..), Enm(..), Bul(..), Mes, maxY)
+import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Mes, maxY)
+import Mydous(applyMana)
 import Myenai(enmAi,enTick)
 
 doWithTime :: State -> IO State 
-doWithTime (State p es ts ms manas) = do
+doWithTime st@(State p es ts ms _) = do
   prs <- sequence$replicate (length es) (randomRIO (0::Int,99))
   let (ms_p,np,ts_p) = changePly ms p ts []
-      (ms_a,eman) = enmAi ms_p (ing p) prs es 0 []
-      es_e = enTick es
-      (ms_e,nes,ts_e) = changeEnms ms_a es_e ts_p [] []
-      (nms,nts) = changeBuls ms_e ts_e []
-  return (State np nes nts nms manas)
+      (ms_e,es_e,ts_e) = changeEnms ms_p es ts_p [] []
+      (ms_b,nts) = changeBuls ms_e ts_e []
+      (nms,eman) = enmAi ms_b (ing np) prs es_e 0 []
+      nes = enTick (ing np) es_e
+      nst = makeMState st{pl=np,ens=nes,tms=nts,mes=nms} eman 
+  return nst
+
+makeMState :: State -> [Maybe Mana] -> State
+makeMState st [] = st
+makeMState st (mn:manas) = let nst = case mn of Nothing -> st; Just jm -> applyMana st jm
+                            in makeMState nst manas
 
 changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
