@@ -13,7 +13,8 @@ doWithTime st@(State p es ts ms _) = do
       (ms_b,nts) = changeBuls ms_e ts_e []
       (nms,eman) = enmAi ms_b (ing np) prs es_e 0 []
       nes = enTick (ing np) es_e
-      nst = makeMState st{pl=np,ens=nes,tms=nts,mes=nms} eman 
+      np' = np{ing=False}
+      nst = makeMState st{pl=np',ens=nes,tms=nts,mes=nms} eman 
   return nst
 
 makeMState :: State -> [Maybe Mana] -> State

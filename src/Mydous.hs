@@ -25,7 +25,7 @@ applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) =
       nms = splitOn "*" nam
       tg = if (length nms==1) then (-1) else (read (last nms))::Int
       fnc = M.lookup (head nms) funcName
-      st' = st{mns = mns st ++ [m]}
+      st' = st{mns = [m]}
       (nst,cs) = case fnc of
                     Nothing -> (st',0)
                     Just f  -> f tg ts1 ts2 st'
@@ -36,7 +36,7 @@ applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) =
       icast = tki > cs
    in if icast then if (tg==(-1)) then nst{pl=(pl nst){pki=tki-cs}} else nst{ens=nens}
                else st'{mes="not enough KI!"}
-applyMana st m = st{mns= mns st ++ [m]}
+applyMana st m = st{mns= [m]}
 
 
 funcName :: M.Map String Fun 
@@ -45,15 +45,22 @@ funcName = M.fromList [("nageru",nageru),("ugoku",ugoku),("miru",miru)]
 miru :: Fun
 miru tg [] [] st 
   | tg==(-1) = (st{mes=seeToMes$lookingAt Ue (px$pl st) 1 1 (makePosLists st)},1)
-  | otherwise = let ens' = ens st
-                    e = ens'!!tg
-                    nplp = lookPlayer$lookingAt Si (ex e) 1 1 (makePosLists st)
-                    ne = e{eai=(eai e){plp=nplp}}
-                    nens = take tg ens' ++ [ne] ++ drop (tg+1) ens'
-                 in (st{ens=nens},1)
-miru tg [] ((T _ (Hou hus)):[]) st = (st{mes=seeToMes$lookingAt Ue dlt 3 1 (makePosLists st)},abs dlt)
+  | otherwise = (enMiru tg 0 1 1 st, 1) 
+miru tg [] ((T _ (Hou hus)):[]) st 
+  | tg==(-1) = (st{mes=seeToMes$lookingAt Ue dlt 3 1 (makePosLists st)},abs dlt)
+  | otherwise = (enMiru tg (-dlt) 3 1 st, abs dlt)
   where (_,dlt) = calcDelta hus 1
 miru _ _ _ st = (st,0)
+
+enMiru :: Int -> Int -> Int -> Int -> State -> State
+enMiru tg ci wi fi st =
+  let ens' = ens st
+      e = ens'!!tg
+      nci = if (ci==0) then ex e else ci
+      nplp = lookPlayer$lookingAt Si nci wi fi (makePosLists st)
+      ne = e{eai=(eai e){plp=nplp}}
+      nens = take tg ens' ++ [ne] ++ drop (tg+1) ens'
+   in st{ens=nens}
 
 lookPlayer :: [Pos] -> Maybe (Int, Int, Int)
 lookPlayer [] = Nothing
@@ -91,40 +98,55 @@ seeToMes sis = concat$map (\(y,c,w,n) -> "dist: "++(show y)++" dir: "++
 
 ugoku :: Fun
 ugoku tg [] _ st = (st{mes="No Direction"},0)
-ugoku tg ((T _ (Hou hus)):[]) [] st = (st{pl=(pl st){pdx=dlt}},abs dlt)
+ugoku tg ((T _ (Hou hus)):[]) [] st 
+  | tg==(-1) = (st{pl=(pl st){pdx=dlt}},abs dlt)
+  | otherwise = (enUgoku tg (-dlt) 1 st,abs dlt)
   where (_,dlt) = calcDelta hus 1
-ugoku tg ((T _ (Hou hus)):[]) ((T _ (Kaz kz)):[]) st = (st{pl=(pl st){pdx=dlt*sp}},(abs dlt)*sp)
+ugoku tg ((T _ (Hou hus)):[]) ((T _ (Kaz kz)):[]) st
+  | tg==(-1) = (st{pl=(pl st){pdx=dlt*sp}},(abs dlt)*sp)
+  | otherwise = (enUgoku tg (-dlt) sp st,(abs dlt)*sp)
   where (sp,dlt) = calcDelta hus kz 
 ugoku _ _ _ st = (st,0)
 
+enUgoku :: Int -> Int -> Int -> State -> State
+enUgoku tg dl sp st = 
+  let ens' = ens st
+      e = ens'!!tg
+      nedx = dl*sp 
+      ne = e{edx=nedx}
+      nens = take tg ens' ++ [ne] ++ drop (tg+1) ens'
+   in st{ens=nens}
+
 nageru :: Fun
 nageru tg [] _ st = (st{mes="No Tama"},0)
-nageru tg ((T _ (Tam tm)):[]) [] st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm [] 1 (getPlp st) 
-nageru tg ((T _ (Tam tm)):[]) ((T _ (Hou hus)):[]) st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm hus 1 (getPlp st) 
-nageru tg ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):[]) st = (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm [] kz (getPlp st) 
-nageru tg ((T _ (Tam tm)):[]) ((T _ (Hou hus)):(T _ (Kaz kz)):[]) st =
-                                          (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm hus kz (getPlp st) 
-nageru tg ((T _ (Tam tm)):[]) ((T _ (Kaz kz)):(T _ (Hou hus)):[]) st =
-                                          (mNage st{tms=(tms st)++(fst mkb)},snd mkb)
-  where mkb = makeBullets tm hus kz (getPlp st) 
+nageru tg ((T _ (Tam tm)):[]) t2 st =
+  case t2 of
+    []  -> nfun [] 1
+    ((T _ (Hou hus)):[]) -> nfun hus 1
+    ((T _ (Kaz kz)):[]) -> nfun [] kz
+    ((T _ (Hou hus)):(T _ (Kaz kz)):[]) -> nfun hus kz
+    ((T _ (Kaz kz)):(T _ (Hou hus)):[]) -> nfun hus kz
+  where dir = if(tg==(-1)) then 1 else (-1)
+        mkb hus' kz' = makeBullets tm hus' (kz'*dir) (getPos tg st) 
+        nfun hus' kz' = let mkb' = mkb hus' kz' in (mNage tg st{tms=(tms st)++(fst mkb')},snd mkb')
 nageru _ _ _ st = (st,0)
 
-mNage :: State -> State
-mNage st = st{pl=(pl st){ing=True}}
+mNage :: Int -> State -> State
+mNage (-1) st = st{pl=(pl st){ing=True}}
+mNage _ st = st
 
 makeBullets :: [(Bu,Int)] -> [(Dr,Int)] -> Int -> (Int, Int) -> ([Bul],Int)
 makeBullets [] _ _ _ = ([],0)
 makeBullets ((b,s):bss) hus sp (y,x) = 
   let (dy, dx) = calcDelta hus sp
-   in ((Bul{bt=b, bs=s, by=y, bx=x, bdy=dy, bdx=dx}):(fst mkb),(s*sp)+(snd mkb))
+   in ((Bul{bt=b, bs=s, by=y, bx=x, bdy=dy, bdx=dx}):(fst mkb),(s*(abs sp))+(snd mkb))
   where mkb = makeBullets bss hus sp (y,x)
 
-getPlp :: State -> (Int, Int)
-getPlp st = let p = pl st in (py p, px p)
+getPos :: Int -> State -> (Int, Int)
+getPos (-1) st = let p = pl st 
+                  in (py p, px p)
+getPos tg st   = let e = (ens st)!!tg
+                  in (ey e, ex e)
 
 calcDelta :: [(Dr,Int)] -> Int -> (Int, Int)
 calcDelta hus sp = (sp, calcDx hus)

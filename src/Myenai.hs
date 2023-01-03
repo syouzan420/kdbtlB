@@ -14,7 +14,7 @@ enTick b (e:es) =
 
 enmAi :: Mes -> Bool -> [Int] -> [Enm] -> Int -> [Maybe Mana] -> (Mes,[Maybe Mana])
 enmAi m _ _ [] _ manas = (m, manas)
-enmAi m b rs (en:enms) i nmns = enmAi (m++nm) b rs enms (i+1) (nmns++[nmn])
+enmAi m b rs (en:enms) i nmns = enmAi nm b rs enms (i+1) (nmns++[nmn])
   where (nm,nmn) = anenm m b (rs!!i) i en
 
 anenm :: Mes -> Bool -> Int -> Int -> Enm -> (Mes,Maybe Mana)
@@ -44,8 +44,8 @@ actMana r tg enx po act =
                                          dir = if(ddx>0) then "hidari" else "migi"
                                       in [dir,show (abs ddx),act]
         "nageru" -> case po of
-                     Nothing -> ["hodama",act] 
-                     Just (_,_,_) -> ["mizutama",act]
+                     Nothing -> ["hodama","yi",act] 
+                     Just (_,_,_) -> ["mizutama","yi",act]
         _ -> ["noact"]
       res = Prelude.foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) []
                                                                 (Prelude.map toMana coms)
