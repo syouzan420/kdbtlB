@@ -87,6 +87,7 @@ appEvent e =
           mslog .= mes st
           if (st/=nst) then stlog %= (++(show nst)++"\n") else return ()
           vScrollToEnd vpScroll
+          vScrollToEnd msScroll
         ev -> zoom edit $ E.handleEditorEvent ev 
 
 

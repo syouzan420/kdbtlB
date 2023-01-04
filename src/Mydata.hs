@@ -5,6 +5,7 @@ module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes, Eai(..)
 import qualified Data.Map.Strict as M
 import Data.List (findIndex, isInfixOf)
 import Data.List.Split (splitOn)
+import Data.Char (isDigit)
 
 
 data Mana = Mana T Y
@@ -35,8 +36,8 @@ data Ply = Ply {pki :: !Int, pmki :: !Int, prt :: !Int, pmrt :: !Int
                ,py :: !Int, px :: !Int, pw :: !Int, pdx :: !Int, ing :: !Bool} deriving (Eq, Show)
 data Enm = Enm {ena :: !String, eki :: !Int, emki :: !Int, ert :: !Int, emrt :: !Int
                ,ey :: !Int, ex :: !Int, ew :: !Int, edx :: !Int, eai :: !Eai} deriving (Eq, Show)
-data Bul = Bul {bt :: !Bu,bs :: !Int,by :: !Int,bx :: !Int,bdy :: !Int,bdx :: !Int} 
-                                                                       deriving (Eq, Show)
+data Bul = Bul {bt :: !Bu,bs :: !Int,by :: !Int,bx :: !Int,bdy :: !Int,bdx :: !Int
+               ,bmt :: !Int,btc :: !Int} deriving (Eq, Show)
 
 -- plp: player position (y,x,w)
 -- atm: max action time
@@ -82,7 +83,12 @@ toKaz str = if (isInfixOf "so" str) then
                     mbs = map (istoKaz . (++ "so")) (init sps)
                     mbs' = if(last sps=="") then mbs else mbs++[istoKaz (last sps)]
                  in foldl (flip (<*>)) (Just 0) $ ((+) <$>) <$> mbs' 
-                                    else istoKaz str
+                                    else if (isDigits str) then Just ((read str)::Int)
+                                                           else istoKaz str
+
+isDigits :: String -> Bool
+isDigits [] = True
+isDigits (x:xs) = (isDigit x) && (isDigits xs)
 
 istoKaz :: String -> Maybe Int
 istoKaz [] = Nothing

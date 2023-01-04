@@ -25,12 +25,13 @@ anenm m b r i e
         pr = if (plp'==Nothing && not b) then ipr' else
              if (plp'/=Nothing && not b) then changePr dam' dan' spr' else changePr dam' dam' spr'
         act = setAct r pr
-        emana = actMana r i ex' plp' act
+        drt = if (dan'==0) then 0 else (div 100 dam')*dan'
+        emana = actMana r i ex' plp' act drt
     in (m,emana)
   where atn' = atn$eai e; ex'=ex e
 
-actMana :: Int -> Int -> Int -> Maybe (Int,Int,Int) -> String -> Maybe Mana
-actMana r tg enx po act =
+actMana :: Int -> Int -> Int -> Maybe (Int,Int,Int) -> String -> Int -> Maybe Mana
+actMana r tg enx po act drt =
   let coms = case act of
         "miru" -> case po of
                      Nothing -> [act] 
@@ -41,8 +42,9 @@ actMana r tg enx po act =
                      Nothing -> if(r<50) then ["hidari",act]
                                          else ["migi",act]
                      Just (_,x,_) -> let ddx = enx-x
-                                         dir = if(ddx>0) then "hidari" else "migi"
-                                      in [dir,show (abs ddx),act]
+                                         ddx' = if(r>=drt) then ddx else (-ddx*2)
+                                         dir = if(ddx'>0) then "hidari" else "migi"
+                                      in [dir,show (abs ddx'),act]
         "nageru" -> case po of
                      Nothing -> ["hodama","yi",act] 
                      Just (_,_,_) -> ["mizutama","yi",act]

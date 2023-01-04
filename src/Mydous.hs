@@ -35,7 +35,7 @@ applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) =
       nens = if (tg>=0) then take tg enms ++ [nen] ++ drop (tg+1) enms else enms
       icast = tki > cs
    in if icast then if (tg==(-1)) then nst{pl=(pl nst){pki=tki-cs}} else nst{ens=nens}
-               else st'{mes="not enough KI!"}
+               else st'{mes=(mes st')++"not enough KI!\n"}
 applyMana st m = st{mns= [m]}
 
 
@@ -126,6 +126,7 @@ nageru tg ((T _ (Tam tm)):[]) t2 st =
     ((T _ (Kaz kz)):[]) -> nfun [] kz
     ((T _ (Hou hus)):(T _ (Kaz kz)):[]) -> nfun hus kz
     ((T _ (Kaz kz)):(T _ (Hou hus)):[]) -> nfun hus kz
+    _ -> (st,0)
   where dir = if(tg==(-1)) then 1 else (-1)
         mkb hus' kz' = makeBullets tm hus' (kz'*dir) (getPos tg st) 
         nfun hus' kz' = let mkb' = mkb hus' kz' in (mNage tg st{tms=(tms st)++(fst mkb')},snd mkb')
@@ -139,7 +140,9 @@ makeBullets :: [(Bu,Int)] -> [(Dr,Int)] -> Int -> (Int, Int) -> ([Bul],Int)
 makeBullets [] _ _ _ = ([],0)
 makeBullets ((b,s):bss) hus sp (y,x) = 
   let (dy, dx) = calcDelta hus sp
-   in ((Bul{bt=b, bs=s, by=y, bx=x, bdy=dy, bdx=dx}):(fst mkb),(s*(abs sp))+(snd mkb))
+      nbmt = if (dx==0) then 0 else if (maxY>=dx) then div maxY dx else 1
+      ndx = if (dx==0) then 0 else if(maxY>=dx) then 1 else div dx maxY
+   in ((Bul{bt=b, bs=s, by=y, bx=x, bdy=dy, bdx=ndx, bmt=nbmt, btc=nbmt}):(fst mkb),(s*(abs sp))+(snd mkb))
   where mkb = makeBullets bss hus sp (y,x)
 
 getPos :: Int -> State -> (Int, Int)

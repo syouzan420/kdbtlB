@@ -24,7 +24,7 @@ makeMState st (mn:manas) = let nst = case mn of Nothing -> st; Just jm -> applyM
 
 changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
-changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _) (b@(Bul _ bs' by' bx' bdy' _):bss) bls =
+changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _) (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) bls =
   if (bdy'<0 && by'<=py' && bx'>=px'-pw' && bx'<=px'+pw') 
      then let npki = pki' - bs'
            in if (npki > 0)
@@ -47,7 +47,8 @@ changeEnms :: Mes -> [Enm] -> [Bul] -> [Enm] -> [Bul] -> (Mes,[Enm],[Bul])
 changeEnms m [] bls enms _ = (m, enms, bls)
 changeEnms m (e:es) [] enms [] = changeEnms m es [] (enms++[normalEnm e]) []
 changeEnms m (e:es) [] enms bls = changeEnms m es bls (enms++[e]) []
-changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es) (b@(Bul _ bs' by' bx' bdy' _):bss) enms bls =
+changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es) 
+             (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) enms bls =
   if (bdy'>0 && by'>=ey' && bx'>=ex'-ew' && bx'<=ex'+ew') 
      then let neki = eki' - bs'
            in if (neki > 0) 
@@ -67,10 +68,13 @@ normalEnm e@(Enm _ eki' emki' ert' emrt' _ ex' _ edx' _) =
 
 changeBuls :: Mes -> [Bul] -> [Bul] -> (Mes,[Bul])
 changeBuls m [] bls = (m,bls) 
-changeBuls m (b@(Bul _ bs' by' bx' bdy' bdx'):bss) bls =
+changeBuls m (b@(Bul _ bs' by' bx' bdy' bdx' bmt' btc'):bss) bls =
   let nby = by'+bdy'
+      nbtc = if (btc'==0) then 0 else btc'-1
+      nbx = if (nbtc==0) then bx'+bdx' else bx'
+      nbtc' = if(nbtc==0) then bmt' else nbtc
    in if (nby>(maxY+bs') || nby<(0-bs'))
          then changeBuls m bss bls
-         else changeBuls m bss (bls++[b{by=nby,bx=bx'+bdx'}])
+         else changeBuls m bss (bls++[b{by=nby,bx=nbx,btc=nbtc'}])
 
 
