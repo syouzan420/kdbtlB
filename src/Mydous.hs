@@ -97,7 +97,7 @@ seeToMes sis = concat$map (\(y,c,w,n) -> "dist: "++(show y)++" dir: "++
     " haba"++(show w)++"---"++n++"\n") sis
 
 ugoku :: Fun
-ugoku tg [] _ st = (st{mes="No Direction"},0)
+ugoku _ [] _ st = (st{mes="No Direction"},0)
 ugoku tg ((T _ (Hou hus)):[]) [] st 
   | tg==(-1) = (st{pl=(pl st){pdx=dlt}},abs dlt)
   | otherwise = (enUgoku tg (-dlt) 1 st,abs dlt)
@@ -118,7 +118,7 @@ enUgoku tg dl sp st =
    in st{ens=nens}
 
 nageru :: Fun
-nageru tg [] _ st = (st{mes="No Tama"},0)
+nageru _ [] _ st = (st{mes="No Tama"},0)
 nageru tg ((T _ (Tam tm)):[]) t2 st =
   case t2 of
     []  -> nfun [] 1
@@ -133,8 +133,14 @@ nageru tg ((T _ (Tam tm)):[]) t2 st =
 nageru _ _ _ st = (st,0)
 
 mNage :: Int -> State -> State
-mNage (-1) st = st{pl=(pl st){ing=True}}
-mNage _ st = st
+mNage (-1) st = showNage (-1) st{pl=(pl st){ing=True}}
+mNage tg st = showNage tg st
+
+showNage :: Int -> State -> State
+showNage (-1) st = st{mes=(mes st)++"tama wo nageta!\n"}
+showNage tg st = let e = (ens st)!!tg
+                     ename = ena e
+                  in st{mes=(mes st)++ename++" ga tama wo nageta!\n"}
 
 makeBullets :: [(Bu,Int)] -> [(Dr,Int)] -> Int -> (Int, Int) -> ([Bul],Int)
 makeBullets [] _ _ _ = ([],0)

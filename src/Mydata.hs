@@ -120,10 +120,10 @@ initstate :: State
 initstate = State player [enemy] [] "" [] 
 
 player :: Ply
-player = Ply{pki=50, pmki=50, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0, ing=False}
+player = Ply{pki=30, pmki=30, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0, ing=False}
 
 enemy :: Enm
-enemy = Enm{ena="douchou", eki=20, emki=20, ert=15, emrt=15, ey=10, ex=0, ew=2, edx=0, eai=eai0}
+enemy = Enm{ena="douchou", eki=25, emki=25, ert=12, emrt=12, ey=10, ex=0, ew=2, edx=0, eai=eai0}
 
 eai0 :: Eai
 eai0 = Eai{plp=Nothing, atm=5, atn=0, tic=0, dam=10, dan=0, ipr=makeProb 80 10 10, spr=makeProb 10 10 80}

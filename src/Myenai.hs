@@ -26,12 +26,12 @@ anenm m b r i e
              if (plp'/=Nothing && not b) then changePr dam' dan' spr' else changePr dam' dam' spr'
         act = setAct r pr
         drt = if (dan'==0) then 0 else (div 100 dam')*dan'
-        emana = actMana r i ex' plp' act drt
+        emana = actMana r i eki' ex' plp' act drt
     in (m,emana)
-  where atn' = atn$eai e; ex'=ex e
+  where atn' = atn$eai e; ex'=ex e; eki'=eki e
 
-actMana :: Int -> Int -> Int -> Maybe (Int,Int,Int) -> String -> Int -> Maybe Mana
-actMana r tg enx po act drt =
+actMana :: Int -> Int -> Int -> Int -> Maybe (Int,Int,Int) -> String -> Int -> Maybe Mana
+actMana r tg enk enx po act drt =
   let coms = case act of
         "miru" -> case po of
                      Nothing -> [act] 
@@ -42,12 +42,21 @@ actMana r tg enx po act drt =
                      Nothing -> if(r<50) then ["hidari",act]
                                          else ["migi",act]
                      Just (_,x,_) -> let ddx = enx-x
-                                         ddx' = if(r>=drt) then ddx else (-ddx*2)
+                                         flg = if(r<50) then 1 else (-1)
+                                         ddx' = if(r>=drt) then ddx else 
+                                                    if(ddx==0) then flg*2 else (-ddx*2)
                                          dir = if(ddx'>0) then "hidari" else "migi"
                                       in [dir,show (abs ddx'),act]
         "nageru" -> case po of
                      Nothing -> ["hodama","yi",act] 
-                     Just (_,_,_) -> ["mizutama","yi",act]
+                     Just (_,x,_) -> let ddx = enx-x
+                                         tam = if(r<50) then "hodama" else "mizutama"
+                                         pow = div (enk*r) 100
+                                         henk = div enk 2
+                                         pow' = if(pow==0) then 1 else if(pow>henk) then henk else pow
+                                         dir = if(ddx>0) then "hidari" else "migi"
+                                      in if (ddx==0) then [tam,show pow',act]
+                                                     else [dir,show (abs ddx),tam,show pow',act]
         _ -> ["noact"]
       res = Prelude.foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) []
                                                                 (Prelude.map toMana coms)
