@@ -14,7 +14,7 @@ doWithTime st@(State p es ts ms _) = do
       (nms,eman) = enmAi ms_b (ing np) prs es_e 0 []
       nes = enTick (ing np) es_e
       np' = np{ing=False}
-      nst = makeMState st{pl=np',ens=nes,tms=nts,mes=nms} eman 
+      nst = if(pki (pl st)==0) then st else makeMState st{pl=np',ens=nes,tms=nts,mes=nms} eman 
   return nst
 
 makeMState :: State -> [Maybe Mana] -> State
@@ -29,7 +29,7 @@ changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _) (b@(Bul _ bs' by' bx' bdy' _ _
      then let npki = pki' - bs'
            in if (npki > 0)
                  then changePly (m++"attacked!\n")
-                        (p{pki=pki'-bs',px=px'+dr,pdx=pdx'-dr}) bss bls
+                        (p{pki=pki'-bs'*2,px=px'+dr,pdx=pdx'-dr}) bss bls
                  else (m++"lose!\n", p{pki=0,pdx=0}, [])
      else changePly m p bss (bls++[b])
                           where dr=if(pdx'>0) then 1 else if(pdx'<0) then (-1) else 0
@@ -53,7 +53,7 @@ changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es)
      then let neki = eki' - bs'
            in if (neki > 0) 
                  then changeEnms (m++ena'++"--hit!\n")
-                    (e{eki=eki'-bs',ex=ex'+dr,edx=edx'-dr}:es) bss enms bls
+                    (e{eki=eki'-bs'*2,ex=ex'+dr,edx=edx'-dr}:es) bss enms bls
                  else changeEnms (m++ena'++"--defeat!\n") es bss enms bls
      else changeEnms m (e:es) bss enms (bls++[b])
                           where dr=if(edx'>0) then 1 else if(edx'<0) then (-1) else 0

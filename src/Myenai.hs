@@ -1,7 +1,7 @@
 module Myenai(enmAi,enTick) where
 
 import Data.Map.Strict as M
-import Mydata(Mana(..),T(..),  Enm(..), Mes,  Eai(..),(.>),toMana)
+import Mydata(Mana(..),T(..),Enm(..),Mes,Eai(..),(.>),toMana)
 
 enTick :: Bool -> [Enm] -> [Enm]
 enTick _ [] = []
@@ -32,39 +32,36 @@ anenm m b r i e
 
 actMana :: Int -> Int -> Int -> Int -> Maybe (Int,Int,Int) -> String -> Int -> Maybe Mana
 actMana r tg enk enx po act drt =
-  let coms = case act of
-        "miru" -> case po of
-                     Nothing -> [act] 
-                     Just (_,x,_) -> let ddx = enx-x
-                                         dir = if(ddx>0) then "hidari" else "migi"
-                                      in if (ddx==0) then [act] else [dir,show (abs ddx),act] 
-        "ugoku" -> case po of
-                     Nothing -> if(r<50) then ["hidari",act]
-                                         else ["migi",act]
-                     Just (_,x,_) -> let ddx = enx-x
-                                         flg = if(r<50) then 1 else (-1)
-                                         ddx' = if(r>=drt) then ddx else 
-                                                    if(ddx==0) then flg*2 else (-ddx*2)
-                                         dir = if(ddx'>0) then "hidari" else "migi"
-                                      in [dir,show (abs ddx'),act]
-        "nageru" -> case po of
-                     Nothing -> ["hodama","yi",act] 
-                     Just (_,x,_) -> let ddx = enx-x
-                                         tam = if(r<50) then "hodama" else "mizutama"
-                                         pow = div (enk*r) 100
-                                         henk = div enk 2
-                                         pow' = if(pow==0) then 1 else if(pow>henk) then henk else pow
-                                         dir = if(ddx>0) then "hidari" else "migi"
-                                      in if (ddx==0) then [tam,show pow',act]
-                                                     else [dir,show (abs ddx),tam,show pow',act]
-        _ -> ["noact"]
+  let flg = if(r<50) then True else False 
+      fto = if flg then 1 else (-1)
+      tam = if flg then "hodama" else "mizutama"
+      dir b = if b then "hidari" else "migi"
+      pow = div (enk*r) 100
+      henk = div enk 2
+      pow' = if(pow==0) then 1 else if(pow>henk) then henk else pow
+      coms = case po of
+               Nothing -> case act of
+                            "miru"   -> [act]
+                            "ugoku"  -> if flg then ["hidari",act] else ["migi",act]
+                            "nageru" -> [tam,"3",act]
+                            _        -> ["noact"]
+               Just (_,x,_) -> 
+                 let ddx = enx - x
+                  in case act of
+                       "miru"   -> if(ddx==0) then [act] else [dir (ddx>0),show (abs ddx),act] 
+                       "ugoku"  -> let ddx' = if(r>=drt) then ddx else
+                                              if(ddx==0) then fto*2 else (-ddx*2)
+                                   in [dir (ddx'>0),show (abs ddx'),act]
+                       "nageru" -> if (ddx==0) then [tam,show pow',act]
+                                               else [dir (ddx>0),show (abs ddx),tam,show pow',act]
+                       _        -> ["noact"]
       res = Prelude.foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) []
                                                                 (Prelude.map toMana coms)
    in (changeNa tg) <$> (case res of [] -> Nothing; (rs:[]) -> Just rs; _ -> Nothing) 
                 
 changeNa :: Int -> Mana -> Mana
 changeNa tg (Mana (T na ta) yo) = 
-  let (hna:nas) = words na
+  let (hna,nas) = case (words na) of [] -> ("",[""]); (hna':nas') -> (hna',nas')
    in Mana (T (hna++"*"++(show tg)++" "++(unwords nas)) ta) yo
 
 changePr :: Int -> Int -> M.Map String Int -> M.Map String Int
