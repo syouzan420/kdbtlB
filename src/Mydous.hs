@@ -44,10 +44,10 @@ funcName = M.fromList [("nageru",nageru),("ugoku",ugoku),("miru",miru)]
 
 miru :: Fun
 miru tg [] [] st 
-  | tg==(-1) = (st{mes=seeToMes$lookingAt Ue (px$pl st) 1 1 (makePosLists st)},1)
+  | tg==(-1) = (st{mes=(mes st)++(seeToMes$lookingAt Ue (px$pl st) 1 1 (makePosLists st))},1)
   | otherwise = (enMiru tg 0 1 1 st, 1) 
 miru tg [] ((T _ (Hou hus)):[]) st 
-  | tg==(-1) = (st{mes=seeToMes$lookingAt Ue dlt 3 1 (makePosLists st)},abs dlt)
+  | tg==(-1) = (st{mes=(mes st)++(seeToMes$lookingAt Ue dlt 3 1 (makePosLists st))},abs dlt)
   | otherwise = (enMiru tg (-dlt) 3 1 st, abs dlt)
   where (_,dlt) = calcDelta hus 1
 miru _ _ _ st = (st,0)
