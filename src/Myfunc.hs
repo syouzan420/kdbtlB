@@ -14,7 +14,10 @@ doWithTime st@(State p es ts ms _) = do
       (nms,eman) = enmAi ms_b (ing np) prs es_e 0 []
       nes = enTick (ing np) es_e
       np' = np{ing=False}
-      nst = if(pki (pl st)==0) then st else makeMState st{pl=np',ens=nes,tms=nts,mes=nms} eman 
+      lms = lines nms
+      lnms = length lms
+      nms' = if(lnms>6) then unlines$drop (lnms-6) lms else unlines lms
+      nst = if(pki (pl st)==0) then st else makeMState st{pl=np',ens=nes,tms=nts,mes=nms'} eman 
   return nst
 
 makeMState :: State -> [Maybe Mana] -> State

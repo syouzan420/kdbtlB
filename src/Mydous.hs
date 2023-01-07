@@ -12,8 +12,11 @@ exeCom :: String -> State -> State
 exeCom com s = let coms =  words com
                    manas = map toMana coms
                    res = foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) [] manas
-                in if (res==[]) then s{mes=mes s++"ERROR!!\n"} 
-                                else makeState s{pl=(pl s){ing=False},mns=[]} res
+                   mesl = lines (mes s)
+                   mlen = length mesl
+                   nmes = if(mlen>6) then unlines$drop (mlen-6) mesl else unlines mesl
+                in if (res==[]) then s{mes=nmes++"ERROR!!\n"} 
+                                else makeState s{pl=(pl s){ing=False},mes=nmes,mns=[]} res
 
 makeState :: State -> [Mana] -> State
 makeState st [] = st
@@ -146,8 +149,9 @@ makeBullets :: [(Bu,Int)] -> [(Dr,Int)] -> Int -> (Int, Int) -> ([Bul],Int)
 makeBullets [] _ _ _ = ([],0)
 makeBullets ((b,s):bss) hus sp (y,x) = 
   let (dy, dx) = calcDelta hus sp
-      nbmt = if (dx==0) then 0 else if (maxY>=dx) then div maxY dx else 1
-      ndx = if (dx==0) then 0 else if(maxY>=dx) then 1 else div dx maxY
+      nbmt = if (dx==0) then 0 else if (maxY>=dx) then div maxY (abs dx) else 1
+      ndx = if (dx==0) then 0 else if(maxY>=dx) then if(dx>0) then 1 else (-1) 
+                                                else div dx maxY
    in ((Bul{bt=b, bs=s, by=y, bx=x, bdy=dy, bdx=ndx, bmt=nbmt, btc=nbmt}):(fst mkb),(s*(abs sp))+(snd mkb))
   where mkb = makeBullets bss hus sp (y,x)
 
