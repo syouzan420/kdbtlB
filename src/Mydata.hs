@@ -1,6 +1,6 @@
 
-module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes, Eai(..)
-             ,T(..), Ta(..), Bu(..), Dr(..), Fun, toMana, initstate, (.>), maxY, youM) where
+module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes, Eai(..) ,T(..), Ta(..)
+             , Bu(..), Dr(..), Fun, toMana, initstate, (.>), minX, maxX, maxY, youM) where
 
 import qualified Data.Map.Strict as M
 import Data.List (findIndex, isInfixOf)
@@ -112,6 +112,12 @@ toMana str = let ta = case toKaz str of
                         Just i  -> Just (Kaz i)
                         Nothing -> M.lookup str manas
               in (\t -> (Mana (T str t) youM)) <$> ta 
+
+minX :: Int
+minX = -5
+
+maxX :: Int
+maxX = 5
 
 maxY :: Int
 maxY = 10

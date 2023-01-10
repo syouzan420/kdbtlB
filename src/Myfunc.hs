@@ -1,9 +1,40 @@
-module Myfunc(doWithTime) where
+module Myfunc(doWithTime,takeMes,plyView) where
 
 import System.Random(randomRIO)
-import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Mes, maxY)
+import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Mes, minX, maxX, maxY)
 import Mydous(applyMana)
 import Myenai(enmAi,enTick)
+
+plyView :: State -> String
+plyView st = let es = ens st
+                 ts = tms st
+              in plyViewLine maxY es ts
+
+plyViewLine :: Int -> [Enm] -> [Bul] -> String
+plyViewLine 0 _ _ = ""
+plyViewLine i es ts = let enxs = getxEn i es 
+                          tmxs = getxTm i ts
+                       in (mkViewLine enxs tmxs) ++ "\n" ++ (plyViewLine (i-1) es ts)
+
+getxEn :: Int -> [Enm] -> [Int]
+getxEn _ [] = []
+getxEn y (e:es) = if(y==ey e) then (ex e):(getxEn y es) else getxEn y es 
+
+getxTm :: Int -> [Bul] -> [Int]
+getxTm _ [] = []
+getxTm y (b:bss) = if(y==by b) then (bx b):(getxTm y bss) else getxTm y bss
+
+mkViewLine :: [Int] -> [Int] -> String
+mkViewLine enxs tmxs = let stl = maxX - minX + 1
+                        in scanLine 't' minX tmxs (scanLine 'e' minX enxs (replicate stl ' '))
+
+scanLine :: Char -> Int -> [Int] -> String -> String
+scanLine _ _ _ [] = ""
+scanLine ch i xs (c:cs) = if (elem i xs) then [ch]++(scanLine ch (i+1) xs cs)
+                                         else [c]++(scanLine ch (i+1) xs cs)
+
+takeMes :: State -> String
+takeMes st = mes st
 
 doWithTime :: State -> IO State 
 doWithTime st@(State p es ts ms _) = do
@@ -14,11 +45,14 @@ doWithTime st@(State p es ts ms _) = do
       (nms,eman) = enmAi ms_b (ing np) prs es_e 0 []
       nes = enTick (ing np) es_e
       np' = np{ing=False}
-      lms = lines nms
-      lnms = length lms
-      nms' = if(lnms>6) then unlines$drop (lnms-6) lms else unlines lms
+      nms' = shortenMes nms 
       nst = if(pki (pl st)==0) then st else makeMState st{pl=np',ens=nes,tms=nts,mes=nms'} eman 
   return nst
+
+shortenMes :: String -> String 
+shortenMes ms = let lms = lines ms
+                    lnms = length lms
+                 in if(lnms>6) then unlines$drop (lnms-6) lms else unlines lms
 
 makeMState :: State -> [Maybe Mana] -> State
 makeMState st [] = st

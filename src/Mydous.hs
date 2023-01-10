@@ -12,11 +12,8 @@ exeCom :: String -> State -> State
 exeCom com s = let coms =  words com
                    manas = map toMana coms
                    res = foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) [] manas
-                   mesl = lines (mes s)
-                   mlen = length mesl
-                   nmes = if(mlen>6) then unlines$drop (mlen-6) mesl else unlines mesl
-                in if (res==[]) then s{mes=nmes++"ERROR!!\n"} 
-                                else makeState s{pl=(pl s){ing=False},mes=nmes,mns=[]} res
+                in if (res==[]) then s{mes=(mes s)++"ERROR!!\n"} 
+                                else makeState s{pl=(pl s){ing=False},mns=[]} res
 
 makeState :: State -> [Mana] -> State
 makeState st [] = st
