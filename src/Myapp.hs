@@ -13,10 +13,11 @@ import qualified Graphics.Vty as V
 import Brick.BChan (newBChan, writeBChan)
 import Brick.Main (App(..), showFirstCursor, customMain, halt
                  ,vScrollToEnd, ViewportScroll, viewportScroll)
-import Brick.AttrMap (attrMap)
+import Brick.AttrMap (attrMap, attrName)
 import Brick.Types (Widget(..), EventM, BrickEvent(..), ViewportType(..))
-import Brick.Widgets.Core (str, strWrap, (<+>), (<=>), hLimit, vLimit, viewport)
+import Brick.Widgets.Core (str, strWrap, (<+>), (<=>), hLimit, vLimit, viewport, withAttr)
 import Brick.Widgets.Edit as E
+import Brick.Util (fg)
 import Brick.Widgets.Center as C
 import Mydata(State,initstate)
 import Myfunc(doWithTime,takeMes,plyView)
@@ -48,10 +49,10 @@ drawUI st = [ui]
           vw = viewport View Vertical v
           e1 = E.renderEditor (str.unlines) True (st^.edit)
           ui = C.center $
-            (str "Mes : " <+> (hLimit 60 $ vLimit 5 ms)) <+> 
-            (str "View : " <+> (hLimit 60 $ vLimit 10 vw)) <=>
+            (str "Mes : " <+> (hLimit 40 $ vLimit 5 ms)) <+> 
+            (str "View : " <+> (withAttr (attrName "watching") $ hLimit 30 $ vLimit 10 vw)) <=>
             str " " <=>
-            (str "Com : " <+> (hLimit 60 $ vLimit 3 cm)) <=>
+            (str "Com : " <+> (hLimit 40 $ vLimit 3 cm)) <=>
             str " " <=>
             (str "Inp :> " <+> (hLimit 60 $ vLimit 3 e1)) <=>
             str " " <=>
@@ -111,7 +112,9 @@ theApp =
         , appChooseCursor = showFirstCursor
         , appHandleEvent = appEvent
         , appStartEvent = return ()
-        , appAttrMap = const $ attrMap V.defAttr []
+        , appAttrMap = const $ attrMap V.defAttr 
+                  [ (attrName "watching", fg V.cyan)
+                  , (attrName "cantsee" , fg V.red)]
         }
 
 appMain :: IO ()
