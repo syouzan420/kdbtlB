@@ -13,8 +13,9 @@ plyView st = let es = ens st
 plyViewLine :: Int -> [Enm] -> [Bul] -> String
 plyViewLine 0 _ _ = ""
 plyViewLine i es ts = let enxs = getxEn i es 
+                          ewxs = getxEw i es
                           tmxs = getxTm i ts
-                       in (mkViewLine enxs tmxs) ++ "\n" ++ (plyViewLine (i-1) es ts)
+                       in (mkViewLine enxs ewxs tmxs) ++ "\n" ++ (plyViewLine (i-1) es ts)
 
 getxEn :: Int -> [Enm] -> [Int]
 getxEn _ [] = []
@@ -24,9 +25,16 @@ getxTm :: Int -> [Bul] -> [Int]
 getxTm _ [] = []
 getxTm y (b:bss) = if(y==by b) then (bx b):(getxTm y bss) else getxTm y bss
 
-mkViewLine :: [Int] -> [Int] -> String
-mkViewLine enxs tmxs = let stl = maxX - minX + 1
-                        in scanLine 't' minX tmxs (scanLine 'e' minX enxs (replicate stl ' '))
+getxEw :: Int -> [Enm] -> [Int]
+getxEw _ [] = []
+getxEw y (e:es) = let w = ew e; x = ex e; y' = ey e
+                   in if(y==y') then (if(w==0) then [] else [(x-w)..(x-1)]++[(x+1)..(x+w)])++(getxEw y es)
+                                else getxEw y es
+
+mkViewLine :: [Int] -> [Int] -> [Int] -> String
+mkViewLine enxs ewxs tmxs = 
+  let stl = maxX - minX + 1
+   in scanLine 't' minX tmxs $ scanLine '-' minX ewxs $ scanLine 'e' minX enxs $ replicate stl ' '
 
 scanLine :: Char -> Int -> [Int] -> String -> String
 scanLine _ _ _ [] = ""
@@ -61,7 +69,7 @@ makeMState st (mn:manas) = let nst = case mn of Nothing -> st; Just jm -> applyM
 
 changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
-changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _) (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) bls =
+changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _) (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) bls =
   if (bdy'<0 && by'<=py' && bx'>=px'-pw' && bx'<=px'+pw') 
      then let npki = pki' - bs'
            in if (npki > 0)
@@ -72,7 +80,7 @@ changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _) (b@(Bul _ bs' by' bx' bdy' _ _
                           where dr=if(pdx'>0) then 1 else if(pdx'<0) then (-1) else 0
 
 normalPly :: Ply -> Ply
-normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx' _) =
+normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx' _ _) =
   if(pdx'==0) then
     if(prt'<0 && pki'<pmki') then p{pki=pki'+1,prt=pmrt'}
                              else if(pki'<pmki') then p{prt=prt'-1} else p

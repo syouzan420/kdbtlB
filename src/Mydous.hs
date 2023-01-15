@@ -44,13 +44,25 @@ funcName = M.fromList [("nageru",nageru),("ugoku",ugoku),("miru",miru)]
 
 miru :: Fun
 miru tg [] [] st 
-  | tg==(-1) = (st{mes=(mes st)++(seeToMes$lookingAt Ue (px$pl st) 1 1 (makePosLists st))},1)
+  | tg==(-1) = (st{mes=(mes st)++(seeToMes$lookingAt Ue (px p) 1 1 (makePosLists st)),
+                   pl=lookList 0 p},1)
   | otherwise = (enMiru tg 0 1 1 st, 1) 
+  where p = pl st
 miru tg [] ((T _ (Hou hus)):[]) st 
-  | tg==(-1) = (st{mes=(mes st)++(seeToMes$lookingAt Ue dlt 3 1 (makePosLists st))},abs dlt)
+  | tg==(-1) = (st{mes=(mes st)++(seeToMes$lookingAt Ue dlt 3 1 (makePosLists st)),
+                   pl=lookList dlt (pl st)},abs dlt)
   | otherwise = (enMiru tg (-dlt) 3 1 st, abs dlt)
   where (_,dlt) = calcDelta hus 1
 miru _ _ _ st = (st,0)
+
+lookList :: Int -> Ply -> Ply
+lookList dl p = p{look=makeLookList dl (px p) 1 1}
+
+makeLookList :: Int -> Int -> Int -> Int -> [(Int,Int)]
+makeLookList dl x w y 
+  |y == maxY+1 = []
+  |otherwise = (makeLookList dl (if imy then x+dl else x) (if imy then w+1 else w) (y+1))++[((x+dl),w)]
+  where imy = mod y 2 == 0
 
 enMiru :: Int -> Int -> Int -> Int -> State -> State
 enMiru tg ci wi fi st =
