@@ -1,21 +1,41 @@
-module Myfunc(doWithTime,takeMes,plyView) where
+module Myfunc(doWithTime,takeMes,plyView,vhData) where
 
 import System.Random(randomRIO)
 import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Mes, minX, maxX, maxY)
 import Mydous(applyMana)
 import Myenai(enmAi,enTick)
 
+vhData :: State -> [(String,String,String)]
+vhData st = let xwl = look$pl st
+                stl = lines$plyView st
+             in vhLines xwl stl
+
+vhLines :: [(Int,Int)] -> [String] -> [(String,String,String)]
+vhLines [] _ = []
+vhLines _ [] = []
+vhLines ((x,w):vs) (str:xs) =
+  let sln = length str
+      ihp = x - w - minX
+      ih = if(ihp<0) then 0 else ihp
+      ilp = ihp + 2 * w
+      il = if(ilp>sln+1) then sln else ilp
+      t0 = take ih str
+      t1 = drop ih (take (il+1) str)
+      t2 = drop (il+1) str
+   in (t0,t1,t2):(vhLines vs xs)
+
 plyView :: State -> String
 plyView st = let es = ens st
                  ts = tms st
-              in plyViewLine maxY es ts
+                 p = pl st
+              in unlines (plyViewLine maxY es ts)++(mkPlyLine (px p) (getxPw p))
 
-plyViewLine :: Int -> [Enm] -> [Bul] -> String
-plyViewLine 0 _ _ = ""
+plyViewLine :: Int -> [Enm] -> [Bul] -> [String]
+plyViewLine 0 _ _ = [] 
 plyViewLine i es ts = let enxs = getxEn i es 
                           ewxs = getxEw i es
                           tmxs = getxTm i ts
-                       in (mkViewLine enxs ewxs tmxs) ++ "\n" ++ (plyViewLine (i-1) es ts)
+                       in (mkViewLine enxs ewxs tmxs):(plyViewLine (i-1) es ts)
 
 getxEn :: Int -> [Enm] -> [Int]
 getxEn _ [] = []
@@ -31,10 +51,19 @@ getxEw y (e:es) = let w = ew e; x = ex e; y' = ey e
                    in if(y==y') then (if(w==0) then [] else [(x-w)..(x-1)]++[(x+1)..(x+w)])++(getxEw y es)
                                 else getxEw y es
 
+getxPw :: Ply -> [Int]
+getxPw p = let w = pw p; x = px p
+            in if(w==0) then [] else [(x-w)..(x-1)]++[(x+1)..(x+w)]
+
 mkViewLine :: [Int] -> [Int] -> [Int] -> String
 mkViewLine enxs ewxs tmxs = 
   let stl = maxX - minX + 1
    in scanLine 't' minX tmxs $ scanLine '-' minX ewxs $ scanLine 'e' minX enxs $ replicate stl ' '
+
+mkPlyLine :: Int -> [Int] -> String
+mkPlyLine px' pwxs =
+  let stl = maxX - minX + 1
+   in scanLine '=' minX pwxs $ scanLine 'p' minX [px'] $ replicate stl ' '
 
 scanLine :: Char -> Int -> [Int] -> String -> String
 scanLine _ _ _ [] = ""

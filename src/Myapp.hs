@@ -25,7 +25,7 @@ import Mydous(exeCom)
 
 data Name = Edit | View | Coma | Mess | Stat deriving (Ord, Show, Eq)
 
-data CustomEvent = Logstate deriving Show
+data CustomEvent = Ticking deriving Show
 
 data St = St {_state :: State
              ,_plview :: String
@@ -50,7 +50,7 @@ drawUI st = [ui]
           e1 = E.renderEditor (str.unlines) True (st^.edit)
           ui = C.center $
             (str "Mes : " <+> (hLimit 40 $ vLimit 5 ms)) <+> 
-            (str "View : " <+> (withAttr (attrName "watching") $ hLimit 30 $ vLimit 10 vw)) <=>
+            (str "View : " <+> (withAttr (attrName "watching") $ hLimit 30 $ vLimit 11 vw)) <=>
             str " " <=>
             (str "Com : " <+> (hLimit 40 $ vLimit 3 cm)) <=>
             str " " <=>
@@ -85,7 +85,7 @@ appEvent e =
           edit .= E.editor Edit (Just 1) ""
           vScrollToEnd cmScroll
           vScrollToEnd msScroll
-        AppEvent Logstate -> do
+        AppEvent Ticking -> do
           st <- use state 
           nst <- liftIO$doWithTime st
           state .= nst 
@@ -122,7 +122,7 @@ appMain = do
     chan <- newBChan 1
 
     void $ forkIO $ forever $ do
-        writeBChan chan Logstate 
+        writeBChan chan Ticking 
         threadDelay 1000000
 
     let buildVty = V.mkVty V.defaultConfig
