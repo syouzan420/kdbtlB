@@ -1,4 +1,4 @@
-module Myfunc(doWithTime,takeMes,plyView,vhData) where
+module Myfunc(doWithTime,takeMes,vhData) where
 
 import System.Random(randomRIO)
 import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Mes, minX, maxX, maxY)
@@ -6,9 +6,14 @@ import Mydous(applyMana)
 import Myenai(enmAi,enTick)
 
 vhData :: State -> [(String,String,String)]
-vhData st = let xwl = look$pl st
-                stl = lines$plyView st
-             in vhLines xwl stl
+vhData st = let p = pl st
+                xwl = look p
+                stl = plyView st
+             in (if(xwl==[]) then hLines stl else vhLines xwl stl)
+                ++[("",mkPlyLine (px p) (getxPw p),"")]
+
+hLines :: [String] -> [(String,String,String)]
+hLines strl = map (\s -> (s,"","")) strl
 
 vhLines :: [(Int,Int)] -> [String] -> [(String,String,String)]
 vhLines [] _ = []
@@ -24,11 +29,10 @@ vhLines ((x,w):vs) (str:xs) =
       t2 = drop (il+1) str
    in (t0,t1,t2):(vhLines vs xs)
 
-plyView :: State -> String
+plyView :: State -> [String]
 plyView st = let es = ens st
                  ts = tms st
-                 p = pl st
-              in unlines (plyViewLine maxY es ts)++(mkPlyLine (px p) (getxPw p))
+              in plyViewLine maxY es ts
 
 plyViewLine :: Int -> [Enm] -> [Bul] -> [String]
 plyViewLine 0 _ _ = [] 

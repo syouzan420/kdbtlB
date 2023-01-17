@@ -13,14 +13,14 @@ import qualified Graphics.Vty as V
 import Brick.BChan (newBChan, writeBChan)
 import Brick.Main (App(..), showFirstCursor, customMain, halt
                  ,vScrollToEnd, ViewportScroll, viewportScroll)
-import Brick.AttrMap (attrMap, attrName)
+import Brick.AttrMap (attrMap, attrName, AttrName)
 import Brick.Types (Widget(..), EventM, BrickEvent(..), ViewportType(..))
-import Brick.Widgets.Core (str, strWrap, (<+>), (<=>), hLimit, vLimit, viewport, withAttr)
+import Brick.Widgets.Core (str, strWrap, (<+>), (<=>), hLimit, vLimit, viewport, withAttr, vBox)
 import Brick.Widgets.Edit as E
 import Brick.Util (fg)
 import Brick.Widgets.Center as C
 import Mydata(State,initstate)
-import Myfunc(doWithTime,takeMes,plyView)
+import Myfunc(doWithTime,takeMes,vhData)
 import Mydous(exeCom)
 
 data Name = Edit | View | Coma | Mess | Stat deriving (Ord, Show, Eq)
@@ -28,7 +28,7 @@ data Name = Edit | View | Coma | Mess | Stat deriving (Ord, Show, Eq)
 data CustomEvent = Ticking deriving Show
 
 data St = St {_state :: State
-             ,_plview :: String
+             ,_vhdata :: [(String,String,String)]
              ,_stlog :: String
              ,_cmlog :: String
              ,_mslog :: String
@@ -42,15 +42,14 @@ drawUI st = [ui]
     where s = (strWrap $ st^.stlog)
           c = (strWrap $ st^.cmlog)
           m = (strWrap $ st^.mslog)
-          v = (strWrap $ st^.plview)
+          vhd = st^.vhdata
           cm = viewport Coma Vertical c
           ms = viewport Mess Vertical m
           sm = viewport Stat Vertical s
-          vw = viewport View Vertical v
           e1 = E.renderEditor (str.unlines) True (st^.edit)
           ui = C.center $
-            (str "Mes : " <+> (hLimit 40 $ vLimit 5 ms)) <+> 
-            (str "View : " <+> (withAttr (attrName "watching") $ hLimit 30 $ vLimit 11 vw)) <=>
+            (str "Mes : " <+> (hLimit 30 $ vLimit 5 ms)) <+> 
+            (vBox $ C.hCenter <$> (widgetVH vhd)) <=>
             str " " <=>
             (str "Com : " <+> (hLimit 40 $ vLimit 3 cm)) <=>
             str " " <=>
@@ -59,6 +58,16 @@ drawUI st = [ui]
             (str "Log : "  <+> (hLimit 100 $ vLimit 8 sm)) <=>
             str " " <=>
             str "Esc to quit."
+
+atwa, athi :: AttrName
+atwa = attrName "watching"; athi = attrName "hiding";
+
+
+widgetVH :: [(String,String,String)] -> [Widget Name]
+widgetVH [] = []
+widgetVH ((t0,t1,t2):xs) = ((withAttr athi $ str t0) <+>
+                            (withAttr atwa $ str t1) <+>
+                            (withAttr athi $ str t2)):(widgetVH xs)
 
 stScroll :: ViewportScroll Name
 stScroll = viewportScroll Stat 
@@ -90,7 +99,7 @@ appEvent e =
           nst <- liftIO$doWithTime st
           state .= nst 
           mslog .= takeMes st
-          plview .= plyView st
+          vhdata .= vhData st
           if (st/=nst) then stlog %= (++(show nst)++"\n") else return ()
           vScrollToEnd stScroll
           vScrollToEnd msScroll
@@ -99,7 +108,7 @@ appEvent e =
 
 initialState :: St
 initialState = St { _state = initstate
-                  , _plview = ""
+                  , _vhdata = []
                   , _stlog = show initstate 
                   , _cmlog = ""
                   , _mslog = ""
@@ -113,8 +122,8 @@ theApp =
         , appHandleEvent = appEvent
         , appStartEvent = return ()
         , appAttrMap = const $ attrMap V.defAttr 
-                  [ (attrName "watching", fg V.cyan)
-                  , (attrName "cantsee" , fg V.red)]
+                  [ (attrName "watching", fg V.brightCyan)
+                  , (attrName "hiding" , fg V.black)]
         }
 
 appMain :: IO ()
