@@ -20,7 +20,7 @@ import Brick.Widgets.Edit as E
 import Brick.Util (fg)
 import Brick.Widgets.Center as C
 import Mydata(State,initstate)
-import Myfunc(doWithTime,takeMes,vhData)
+import Myfunc(doWithTime,takeMes,takePtic,vhData)
 import Mydous(exeCom)
 
 data Name = Edit | View | Coma | Mess | Stat deriving (Ord, Show, Eq)
@@ -29,6 +29,7 @@ data CustomEvent = Ticking deriving Show
 
 data St = St {_state :: State
              ,_vhdata :: [(String,String,String)]
+             ,_ptic :: Int
              ,_stlog :: String
              ,_cmlog :: String
              ,_mslog :: String
@@ -43,13 +44,14 @@ drawUI st = [ui]
           c = (strWrap $ st^.cmlog)
           m = (strWrap $ st^.mslog)
           vhd = st^.vhdata
+          tic = st^.ptic
           cm = viewport Coma Vertical c
           ms = viewport Mess Vertical m
           sm = viewport Stat Vertical s
           e1 = E.renderEditor (str.unlines) True (st^.edit)
           ui = C.center $
             (str "Mes : " <+> (hLimit 30 $ vLimit 5 ms)) <+> 
-            (vBox $ C.hCenter <$> (widgetVH vhd)) <=>
+            (vBox $ C.hCenter <$> (widgetVH tic vhd)) <=>
             str " " <=>
             (str "Com : " <+> (hLimit 40 $ vLimit 3 cm)) <=>
             str " " <=>
@@ -60,14 +62,15 @@ drawUI st = [ui]
             str "Esc to quit."
 
 atwa, athi :: AttrName
-atwa = attrName "watching"; athi = attrName "hiding";
+atwa = attrName "player"; athi = attrName "0"
 
 
-widgetVH :: [(String,String,String)] -> [Widget Name]
-widgetVH [] = []
-widgetVH ((t0,t1,t2):xs) = ((withAttr athi $ str t0) <+>
-                            (withAttr atwa $ str t1) <+>
-                            (withAttr athi $ str t2)):(widgetVH xs)
+widgetVH :: Int -> [(String,String,String)] -> [Widget Name]
+widgetVH _ [] = []
+widgetVH _ [(_,t1,_)] = [(withAttr atwa $ str t1)] 
+widgetVH i ((t0,t1,t2):xs) = ((withAttr athi $ str t0) <+>
+                             (withAttr (attrName (show i)) $ str t1) <+>
+                             (withAttr athi $ str t2)):(widgetVH i xs)
 
 stScroll :: ViewportScroll Name
 stScroll = viewportScroll Stat 
@@ -100,6 +103,7 @@ appEvent e =
           state .= nst 
           mslog .= takeMes st
           vhdata .= vhData st
+          ptic .= takePtic st
           if (st/=nst) then stlog %= (++(show nst)++"\n") else return ()
           vScrollToEnd stScroll
           vScrollToEnd msScroll
@@ -108,6 +112,7 @@ appEvent e =
 
 initialState :: St
 initialState = St { _state = initstate
+                  , _ptic = 0
                   , _vhdata = []
                   , _stlog = show initstate 
                   , _cmlog = ""
@@ -121,10 +126,12 @@ theApp =
         , appChooseCursor = showFirstCursor
         , appHandleEvent = appEvent
         , appStartEvent = return ()
-        , appAttrMap = const $ attrMap V.defAttr 
-                  [ (attrName "watching", fg V.brightCyan)
-                  , (attrName "hiding" , fg V.black)]
+        , appAttrMap = const $ attrMap V.defAttr (makeColors 20)
         }
+
+makeColors :: Int -> [(AttrName, V.Attr)]
+makeColors 0 = [(attrName "player", fg V.brightCyan), (attrName "0", fg V.black)]
+makeColors i = (attrName (show i), fg (V.rgbColor (i*10) (i*10) (i*10))):(makeColors (i-1))
 
 appMain :: IO ()
 appMain = do

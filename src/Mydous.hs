@@ -56,7 +56,7 @@ miru tg [] ((T _ (Hou hus)):[]) st
 miru _ _ _ st = (st,0)
 
 lookList :: Int -> Ply -> Ply
-lookList dl p = p{look=makeLookList dl (px p) 1 1}
+lookList dl p = p{look=makeLookList dl (px p) 1 1, ltc=20}
 
 makeLookList :: Int -> Int -> Int -> Int -> [(Int,Int)]
 makeLookList dl x w y 

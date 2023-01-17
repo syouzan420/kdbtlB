@@ -1,4 +1,4 @@
-module Myfunc(doWithTime,takeMes,vhData) where
+module Myfunc(doWithTime,takeMes,takePtic,vhData) where
 
 import System.Random(randomRIO)
 import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Mes, minX, maxX, maxY)
@@ -77,6 +77,9 @@ scanLine ch i xs (c:cs) = if (elem i xs) then [ch]++(scanLine ch (i+1) xs cs)
 takeMes :: State -> String
 takeMes st = mes st
 
+takePtic :: State -> Int
+takePtic st = ltc$pl st
+
 doWithTime :: State -> IO State 
 doWithTime st@(State p es ts ms _) = do
   prs <- sequence$replicate (length es) (randomRIO (0::Int,99))
@@ -102,7 +105,7 @@ makeMState st (mn:manas) = let nst = case mn of Nothing -> st; Just jm -> applyM
 
 changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
-changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _) (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) bls =
+changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) bls =
   if (bdy'<0 && by'<=py' && bx'>=px'-pw' && bx'<=px'+pw') 
      then let npki = pki' - bs'
            in if (npki > 0)
@@ -113,12 +116,15 @@ changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _) (b@(Bul _ bs' by' bx' bdy' _
                           where dr=if(pdx'>0) then 1 else if(pdx'<0) then (-1) else 0
 
 normalPly :: Ply -> Ply
-normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx' _ _) =
+normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx' _ look' ltc') =
   if(pdx'==0) then
-    if(prt'<0 && pki'<pmki') then p{pki=pki'+1,prt=pmrt'}
-                             else if(pki'<pmki') then p{prt=prt'-1} else p
-              else p{px=px'+dr, pdx=pdx'-dr} 
+    if(prt'<0 && pki'<pmki') then np{pki=pki'+1,prt=pmrt'}
+                             else if(pki'<pmki') then np{prt=prt'-1} else np
+              else np{px=px'+dr, pdx=pdx'-dr} 
                 where dr=if(pdx'>0) then 1 else (-1)
+                      nlook = if(ltc'==0) then [] else look'
+                      nltc = if(ltc'/=0) then ltc'-1 else 0
+                      np = p{look=nlook, ltc=nltc}
 
   
 changeEnms :: Mes -> [Enm] -> [Bul] -> [Enm] -> [Bul] -> (Mes,[Enm],[Bul])

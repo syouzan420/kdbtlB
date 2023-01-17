@@ -32,8 +32,8 @@ data State = State {pl  :: !Ply
                    } deriving (Eq, Show)
 
 -- ki:genki, mki: max genki, rt: recover time, mrt: max recover time
-data Ply = Ply {pki :: !Int, pmki :: !Int, prt :: !Int, pmrt :: !Int, py :: !Int, px :: !Int
-               ,pw :: !Int, pdx :: !Int, ing :: !Bool, look :: ![(Int,Int)]} deriving (Eq, Show)
+data Ply = Ply {pki :: !Int, pmki :: !Int, prt :: !Int, pmrt :: !Int, py :: !Int, px :: !Int, pw :: !Int
+               ,pdx :: !Int, ing :: !Bool, look :: ![(Int,Int)], ltc :: !Int} deriving (Eq, Show)
 data Enm = Enm {ena :: !String, eki :: !Int, emki :: !Int, ert :: !Int, emrt :: !Int
                ,ey :: !Int, ex :: !Int, ew :: !Int, edx :: !Int, eai :: !Eai} deriving (Eq, Show)
 data Bul = Bul {bt :: !Bu,bs :: !Int,by :: !Int,bx :: !Int,bdy :: !Int,bdx :: !Int
@@ -120,7 +120,7 @@ initstate :: State
 initstate = State player [enemy] [] "" [] 
 
 player :: Ply
-player = Ply{pki=30, pmki=30, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0, ing=False, look=[]}
+player = Ply{pki=30, pmki=30, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0, ing=False, look=[], ltc=0}
 
 enemy :: Enm
 enemy = Enm{ena="douchou", eki=25, emki=25, ert=12, emrt=12, ey=10, ex=0, ew=2, edx=0, eai=eai0}
