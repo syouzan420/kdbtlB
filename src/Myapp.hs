@@ -20,7 +20,7 @@ import Brick.Widgets.Edit as E
 import Brick.Util (fg)
 import Brick.Widgets.Center as C
 import Mydata(State,initstate)
-import Myfunc(doWithTime,takeMes,takePtic,vhData)
+import Myfunc(doWithTime,takeMes,takePtic,takePki,vhData)
 import Mydous(exeCom)
 
 data Name = Edit | View | Coma | Mess | Stat deriving (Ord, Show, Eq)
@@ -29,6 +29,7 @@ data CustomEvent = Ticking deriving Show
 
 data St = St {_state :: State
              ,_vhdata :: [(String,String,String)]
+             ,_pkiv :: Int
              ,_ptic :: Int
              ,_stlog :: String
              ,_cmlog :: String
@@ -45,24 +46,27 @@ drawUI st = [ui]
           m = (strWrap $ st^.mslog)
           vhd = st^.vhdata
           tic = st^.ptic
+          kiv = st^.pkiv
           cm = viewport Coma Vertical c
           ms = viewport Mess Vertical m
           sm = viewport Stat Vertical s
           e1 = E.renderEditor (str.unlines) True (st^.edit)
           ui = C.center $
-            (str "Mes : " <+> (hLimit 30 $ vLimit 5 ms)) <+> 
-            (vBox $ C.hCenter <$> (widgetVH tic vhd)) <=>
+            ((str "Mes : " <+> (hLimit 40 $ vLimit 5 ms)) <=> 
             str " " <=>
-            (str "Com : " <+> (hLimit 40 $ vLimit 3 cm)) <=>
+            (str "Inp :> " <+> (hLimit 40 $ vLimit 3 e1)) <=>
             str " " <=>
-            (str "Inp :> " <+> (hLimit 60 $ vLimit 3 e1)) <=>
+            (str "Com : " <+> (withAttr atcm $ hLimit 40 $ vLimit 2 cm))) <+> 
+          --  (vBox $ C.hCenter <$> (widgetVH tic vhd)) <+>
+            (vBox $ (widgetVH tic vhd)) <+>
+            (str " Ki : " <+> str (show kiv)) <=>
             str " " <=>
             (str "Log : "  <+> (hLimit 100 $ vLimit 8 sm)) <=>
             str " " <=>
             str "Esc to quit."
 
-atwa, athi :: AttrName
-atwa = attrName "player"; athi = attrName "0"
+atwa, athi, atcm :: AttrName
+atwa = attrName "player"; athi = attrName "0"; atcm = attrName "command"
 
 
 widgetVH :: Int -> [(String,String,String)] -> [Widget Name]
@@ -104,6 +108,7 @@ appEvent e =
           mslog .= takeMes st
           vhdata .= vhData st
           ptic .= takePtic st
+          pkiv .= takePki st
           if (st/=nst) then stlog %= (++(show nst)++"\n") else return ()
           vScrollToEnd stScroll
           vScrollToEnd msScroll
@@ -113,6 +118,7 @@ appEvent e =
 initialState :: St
 initialState = St { _state = initstate
                   , _ptic = 0
+                  , _pkiv = 0
                   , _vhdata = []
                   , _stlog = show initstate 
                   , _cmlog = ""
@@ -130,7 +136,9 @@ theApp =
         }
 
 makeColors :: Int -> [(AttrName, V.Attr)]
-makeColors 0 = [(attrName "player", fg V.brightCyan), (attrName "0", fg V.black)]
+makeColors 0 = [(attrName "player", fg V.brightCyan)
+               ,(attrName "0", fg V.black)
+               ,(attrName "command", fg V.brightYellow)]
 makeColors i = (attrName (show i), fg (V.rgbColor (i*10) (i*10) (i*10))):(makeColors (i-1))
 
 appMain :: IO ()

@@ -1,4 +1,4 @@
-module Myfunc(doWithTime,takeMes,takePtic,vhData) where
+module Myfunc(doWithTime,takeMes,takePtic,takePki,vhData) where
 
 import System.Random(randomRIO)
 import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Mes, minX, maxX, maxY)
@@ -30,16 +30,13 @@ vhLines ((x,w):vs) (str:xs) =
    in (t0,t1,t2):(vhLines vs xs)
 
 plyView :: State -> [String]
-plyView st = let es = ens st
-                 ts = tms st
-              in plyViewLine maxY es ts
+plyView st = plyViewLine maxY es ts
+    where es = ens st; ts = tms st
 
 plyViewLine :: Int -> [Enm] -> [Bul] -> [String]
 plyViewLine 0 _ _ = [] 
-plyViewLine i es ts = let enxs = getxEn i es 
-                          ewxs = getxEw i es
-                          tmxs = getxTm i ts
-                       in (mkViewLine enxs ewxs tmxs):(plyViewLine (i-1) es ts)
+plyViewLine i es ts = (mkViewLine enxs ewxs tmxs):(plyViewLine (i-1) es ts)
+  where enxs = getxEn i es; ewxs = getxEw i es; tmxs = getxTm i ts
 
 getxEn :: Int -> [Enm] -> [Int]
 getxEn _ [] = []
@@ -79,6 +76,9 @@ takeMes st = mes st
 
 takePtic :: State -> Int
 takePtic st = ltc$pl st
+
+takePki :: State -> Int
+takePki st = pki$pl st
 
 doWithTime :: State -> IO State 
 doWithTime st@(State p es ts ms _) = do
