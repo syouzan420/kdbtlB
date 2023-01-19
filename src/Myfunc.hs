@@ -107,11 +107,11 @@ changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
 changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) bls =
   if (bdy'<0 && by'<=py' && bx'>=px'-pw' && bx'<=px'+pw') 
-     then let npki = pki' - bs'
-           in if (npki > 0)
-                 then changePly (m++"attacked!\n")
-                        (p{pki=pki'-bs'*2,px=px'+dr,pdx=pdx'-dr}) bss bls
-                 else (m++"lose!\n", p{pki=0,pdx=0}, [])
+     then let npki = pki' - bs'*2
+              ilose = npki <= 0
+           in if ilose then (m++"you lose!\n", p{pki=0,pdx=0}, [])
+                       else changePly (m++"attacked!\n")
+                              (p{pki=npki,px=px'+dr,pdx=pdx'-dr}) bss bls
      else changePly m p bss (bls++[b])
                           where dr=if(pdx'>0) then 1 else if(pdx'<0) then (-1) else 0
 
@@ -134,11 +134,11 @@ changeEnms m (e:es) [] enms bls = changeEnms m es bls (enms++[e]) []
 changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es) 
              (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) enms bls =
   if (bdy'>0 && by'>=ey' && bx'>=ex'-ew' && bx'<=ex'+ew') 
-     then let neki = eki' - bs'
-           in if (neki > 0) 
-                 then changeEnms (m++ena'++"--hit!\n")
-                    (e{eki=eki'-bs'*2,ex=ex'+dr,edx=edx'-dr}:es) bss enms bls
-                 else changeEnms (m++ena'++"--defeat!\n") es bss enms bls
+     then let neki = eki' - bs'*2
+              idef = neki <= 0
+           in if idef then changeEnms (m++ena'++"--defeat!\n") es bss enms bls
+                      else changeEnms (m++ena'++"--hit!\n")
+                            (e{eki=neki,ex=ex'+dr,edx=edx'-dr}:es) bss enms bls
      else changeEnms m (e:es) bss enms (bls++[b])
                           where dr=if(edx'>0) then 1 else if(edx'<0) then (-1) else 0
 
