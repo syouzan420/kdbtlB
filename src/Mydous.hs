@@ -165,10 +165,8 @@ makeBullets ((b,s):bss) hus sp (y,x) =
   where mkb = makeBullets bss hus sp (y,x)
 
 getPos :: Int -> State -> (Int, Int)
-getPos (-1) st = let p = pl st 
-                  in (py p, px p)
-getPos tg st   = let e = (ens st)!!tg
-                  in (ey e, ex e)
+getPos (-1) st = let p = pl st in (py p, px p)
+getPos tg st   = let e = (ens st)!!tg in (ey e, ex e)
 
 calcDelta :: [(Dr,Int)] -> Int -> (Int, Int)
 calcDelta hus sp = (sp, calcDx hus)

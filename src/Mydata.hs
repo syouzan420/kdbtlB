@@ -117,16 +117,20 @@ minX, maxX, maxY :: Int
 minX = -10; maxX = 10; maxY = 10
 
 initstate :: State 
-initstate = State player [enemy] [] "" [] 
+initstate = State player [enemy0,enemy1] [] "" [] 
 
 player :: Ply
 player = Ply{pki=30, pmki=30, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0, ing=False, look=[], ltc=0}
 
-enemy :: Enm
-enemy = Enm{ena="douchou", eki=25, emki=25, ert=12, emrt=12, ey=10, ex=0, ew=2, edx=0, eai=eai0}
+enemy0 :: Enm
+enemy0 = Enm{ena="douchou", eki=25, emki=25, ert=12, emrt=12, ey=10, ex=0, ew=2, edx=0, eai=eai0}
+
+enemy1 :: Enm
+enemy1 = Enm{ena="kyakkan", eki=20, emki=20, ert=10, emrt=10, ey=8, ex=3, ew=1, edx=0, eai=eai0}
 
 eai0 :: Eai
 eai0 = Eai{plp=Nothing, atm=5, atn=0, tic=0, dam=10, dan=0, ipr=makeProb 80 10 10, spr=makeProb 10 10 80}
+
 
 makeProb :: Int -> Int -> Int -> M.Map String Int
 makeProb a b c = M.fromList [("miru",a),("ugoku",b),("nageru",c)]

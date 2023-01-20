@@ -125,7 +125,6 @@ normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx' _ look' ltc') =
                       nlook = if(ltc'==0) then [] else look'
                       nltc = if(ltc'/=0) then ltc'-1 else 0
                       np = p{look=nlook, ltc=nltc}
-
   
 changeEnms :: Mes -> [Enm] -> [Bul] -> [Enm] -> [Bul] -> (Mes,[Enm],[Bul])
 changeEnms m [] bls enms _ = (m, enms, bls)
@@ -160,5 +159,4 @@ changeBuls m (b@(Bul _ bs' by' bx' bdy' bdx' bmt' btc'):bss) bls =
    in if (nby>(maxY+bs') || nby<(0-bs'))
          then changeBuls m bss bls
          else changeBuls m bss (bls++[b{by=nby,bx=nbx,btc=nbtc'}])
-
 
