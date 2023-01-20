@@ -52,18 +52,19 @@ drawUI st = [ui]
           sm = viewport Stat Vertical s
           e1 = E.renderEditor (str.unlines) True (st^.edit)
           ui = C.center $
-            ((str "Mes : " <+> (hLimit 40 $ vLimit 5 ms)) <=> 
-            str " " <=>
-            (str "Inp :> " <+> (hLimit 40 $ vLimit 3 e1)) <=>
-            str " " <=>
-            (str "Com : " <+> (withAttr atcm $ hLimit 40 $ vLimit 2 cm))) <+> 
-          --  (vBox $ C.hCenter <$> (widgetVH tic vhd)) <+>
-            (vBox $ (widgetVH tic vhd)) <+>
-            (str " Ki : " <+> str (show kiv)) <=>
-            str " " <=>
-            (str "Log : "  <+> (hLimit 100 $ vLimit 8 sm)) <=>
-            str " " <=>
-            str "Esc to quit."
+            (str "  ") <+> (
+              ((str "Mes : " <+> (hLimit 40 $ vLimit 5 ms)) <=> 
+              str " " <=>
+              (str "Inp :> " <+> (hLimit 40 $ vLimit 3 e1)) <=>
+              str " " <=>
+              (str "Com : " <+> (withAttr atcm $ hLimit 40 $ vLimit 2 cm))) <+> 
+                (vBox $ (widgetVH tic vhd)) <+>
+                  (str " Ki : " <+> str (show kiv)) <=>
+              str " " <=>
+              (str "Log : "  <+> sm) <=>
+              str " " <=>
+              str "Esc to quit."
+            ) <+> (str "  ")
 
 atwa, athi, atcm :: AttrName
 atwa = attrName "player"; athi = attrName "0"; atcm = attrName "command"
@@ -75,9 +76,6 @@ widgetVH _ [(_,t1,_)] = [(withAttr atwa $ str t1)]
 widgetVH i ((t0,t1,t2):xs) = ((withAttr athi $ str t0) <+>
                              (withAttr (attrName (show i)) $ str t1) <+>
                              (withAttr athi $ str t2)):(widgetVH i xs)
-
-stScroll :: ViewportScroll Name
-stScroll = viewportScroll Stat 
 
 cmScroll :: ViewportScroll Name
 cmScroll = viewportScroll Coma
@@ -109,8 +107,7 @@ appEvent e =
           vhdata .= vhData st
           ptic .= takePtic st
           pkiv .= takePki st
-          if (st/=nst) then stlog %= (++(show nst)++"\n") else return ()
-          vScrollToEnd stScroll
+          if (st/=nst) then stlog .= show nst else return ()
           vScrollToEnd msScroll
         ev -> zoom edit $ E.handleEditorEvent ev 
 
