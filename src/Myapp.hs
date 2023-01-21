@@ -59,15 +59,15 @@ drawUI st = [ui]
               str " " <=>
               (str "Com : " <+> (withAttr atcm $ hLimit 40 $ vLimit 2 cm))) <+> 
                 (vBox $ (widgetVH tic vhd)) <+>
-                  (str " Ki : " <+> str (show kiv)) <=>
+                  (str " Ki : [i,u,o,a,e]" <=> (withAttr atki $ str ("      "++(show kiv)))) <=>
               str " " <=>
               (str "Log : "  <+> sm) <=>
               str " " <=>
               str "Esc to quit."
             ) <+> (str "  ")
 
-atwa, athi, atcm :: AttrName
-atwa = attrName "player"; athi = attrName "0"; atcm = attrName "command"
+atwa, athi, atcm, atki :: AttrName
+atwa = attrName "player"; athi = attrName "0"; atcm = attrName "command"; atki = attrName "ki"
 
 
 widgetVH :: Int -> [(String,String,String)] -> [Widget Name]
@@ -135,7 +135,8 @@ theApp =
 makeColors :: Int -> [(AttrName, V.Attr)]
 makeColors 0 = [(attrName "player", fg V.brightCyan)
                ,(attrName "0", fg V.black)
-               ,(attrName "command", fg V.brightYellow)]
+               ,(attrName "command", fg V.brightYellow)
+               ,(attrName "ki", fg V.brightGreen)]
 makeColors i = (attrName (show i), fg (V.rgbColor (i*10) (i*10) (i*10))):(makeColors (i-1))
 
 appMain :: IO ()

@@ -36,7 +36,7 @@ applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) =
       nen = if (tg>=0) then (enms!!tg){eki=kdif} else enms!!0 
       nens = if (tg>=0) then take tg enms ++ [nen] ++ drop (tg+1) enms else enms
    in if icast then if (tg==(-1)) then nst{pl=(pl nst){pki=kdif}} else nst{ens=nens}
-               else st'{mes=(mes st')++"not enough KI!\n"}
+               else if (tg==(-1)) then st'{mes=(mes st')++"not enough KI!\n"} else st'
 applyMana st m = st{mns= [m]}
 
 funcName :: M.Map String Fun 
@@ -161,7 +161,7 @@ makeBullets ((b,s):bss) hus sp (y,x) =
       nbmt = if (dx==0) then 0 else if (maxY>=dx) then div maxY (abs dx) else 1
       ndx = if (dx==0) then 0 else if(maxY>=dx) then if(dx>0) then 1 else (-1) 
                                                 else div dx maxY
-      cs = case b of Ho -> Ki 0 s 0 0 (abs sp); Mi -> Ki 0 0 (abs sp) 0 s; _ -> Ki 0 0 0 0 0
+      cs = case b of Ho -> Ki 0 s 0 0 (abs sp); Mi -> Ki 0 0 (abs sp) 0 s;
    in ((Bul{bt=b, bs=s, by=y, bx=x, bdy=dy, bdx=ndx, bmt=nbmt, btc=nbmt}):(fst mkb)
       ,(addKi (snd mkb) cs))
   where mkb = makeBullets bss hus sp (y,x)

@@ -109,7 +109,7 @@ changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
 changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul bt' bs' by' bx' bdy' _ _ _):bss) bls =
   if (bdy'<0 && by'<=py' && bx'>=px'-pw' && bx'<=px'+pw') 
-     then let bki = case bt' of Ho -> Ki 0 0 0 bs' 0; Mi -> Ki 0 bs' 0 0 0;
+     then let bki = case bt' of Ho -> Ki 0 0 0 (bs'*2) 0; Mi -> Ki 0 (bs'*2) 0 0 0;
               npki = subKi pki' bki
               ilose = isKiLow npki 
            in if ilose then (m++"you lose!\n", p{pki=Ki 0 0 0 0 0,pdx=0}, [])
