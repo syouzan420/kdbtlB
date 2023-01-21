@@ -29,7 +29,7 @@ data CustomEvent = Ticking deriving Show
 
 data St = St {_state :: State
              ,_vhdata :: [(String,String,String)]
-             ,_pkiv :: Int
+             ,_pkiv :: [Int]
              ,_ptic :: Int
              ,_stlog :: String
              ,_cmlog :: String
@@ -115,7 +115,7 @@ appEvent e =
 initialState :: St
 initialState = St { _state = initstate
                   , _ptic = 0
-                  , _pkiv = 0
+                  , _pkiv = [] 
                   , _vhdata = []
                   , _stlog = show initstate 
                   , _cmlog = ""

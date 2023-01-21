@@ -1,7 +1,7 @@
 module Myenai(enmAi,enTick) where
 
 import Data.Map.Strict as M
-import Mydata(Mana(..),T(..),Enm(..),Mes,Eai(..),(.>),toMana)
+import Mydata(Mana(..),T(..),Enm(..),Mes,Eai(..),Ki,(.>),toMana,kiToList)
 
 enTick :: Bool -> [Enm] -> [Enm]
 enTick _ [] = []
@@ -26,31 +26,34 @@ anenm m b r i e
              if (plp'/=Nothing && not b) then changePr dam' dan' spr' else changePr dam' dam' spr'
         act = setAct r pr
         drt = if (dan'==0) then 0 else (div 100 dam')*dan'
-        emana = actMana r i eki' ex' plp' act drt
+        emana = actMana r i eki' ex' ew' plp' act drt
     in (m,emana)
-  where atn' = atn$eai e; ex'=ex e; eki'=eki e
+  where atn' = atn$eai e; ex'=ex e; ew'=ew e; eki'=eki e
 
-actMana :: Int -> Int -> Int -> Int -> Maybe (Int,Int,Int) -> String -> Int -> Maybe Mana
-actMana r tg enk enx po act drt =
+actMana :: Int -> Int -> Ki -> Int -> Int -> Maybe (Int,Int,Int) -> String -> Int -> Maybe Mana
+actMana r tg enk enx enw po act drt =
   let flg = if(r<50) then True else False 
       fto = if flg then 1 else (-1)
       tam = if flg then "hodama" else "mizutama"
+      kit = if flg then 1 else 4
+      kls = kiToList enk
+      tki = kls!!kit
       dir b = if b then "hidari" else "migi"
-      pow = div (enk*r) 100
-      henk = div enk 2
-      pow' = if(pow==0) then 1 else if(pow>henk) then henk else pow
+      pow = div (tki*(div r 2)) 100
+      henk = div tki 2
+      pow' = if(pow==0) then 1 else if(pow>henk) then (if(henk>0) then henk else 1) else pow
       coms = case po of
                Nothing -> case act of
                             "miru"   -> [act]
                             "ugoku"  -> if flg then ["hidari",act] else ["migi",act]
-                            "nageru" -> [tam,"3",act]
+                            "nageru" -> [tam,show pow',act]
                             _        -> ["noact"]
                Just (_,x,_) -> 
                  let ddx = enx - x
                   in case act of
                        "miru"   -> if(ddx==0) then [act] else [dir (ddx>0),show (abs ddx),act] 
-                       "ugoku"  -> let ddx' = if(r>=drt) then ddx else
-                                              if(ddx==0) then fto*2 else (-ddx*2)
+                       "ugoku"  -> let ddx' = if((div r 2)>=drt) then ddx else
+                                              if(ddx==0) then fto*enw*2 else (div ddx (abs ddx))*enw*2
                                    in [dir (ddx'>0),show (abs ddx'),act]
                        "nageru" -> if (ddx==0) then [tam,show pow',act]
                                                else [dir (ddx>0),show (abs ddx),tam,show pow',act]

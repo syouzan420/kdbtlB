@@ -1,6 +1,7 @@
 
 module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes, Eai(..) ,T(..), Ta(..)
-             , Bu(..), Dr(..), Fun, toMana, initstate, (.>), minX, maxX, maxY, youM) where
+             , Bu(..), Dr(..), Ki(..), Fun, toMana, initstate, (.>), minX, maxX, maxY, youM
+             , addKi, timKi, subKi, kiToList, isKiLow, newKi) where
 
 import qualified Data.Map.Strict as M
 import Data.List (findIndex, isInfixOf)
@@ -32,12 +33,14 @@ data State = State {pl  :: !Ply
                    } deriving (Eq, Show)
 
 -- ki:genki, mki: max genki, rt: recover time, mrt: max recover time
-data Ply = Ply {pki :: !Int, pmki :: !Int, prt :: !Int, pmrt :: !Int, py :: !Int, px :: !Int, pw :: !Int
+data Ply = Ply {pki :: !Ki, pmki :: !Ki, prt :: !Int, pmrt :: !Int, py :: !Int, px :: !Int, pw :: !Int
                ,pdx :: !Int, ing :: !Bool, look :: ![(Int,Int)], ltc :: !Int} deriving (Eq, Show)
-data Enm = Enm {ena :: !String, eki :: !Int, emki :: !Int, ert :: !Int, emrt :: !Int
+data Enm = Enm {ena :: !String, eki :: !Ki, emki :: !Ki, ert :: !Int, emrt :: !Int
                ,ey :: !Int, ex :: !Int, ew :: !Int, edx :: !Int, eai :: !Eai} deriving (Eq, Show)
 data Bul = Bul {bt :: !Bu,bs :: !Int,by :: !Int,bx :: !Int,bdy :: !Int,bdx :: !Int
                ,bmt :: !Int,btc :: !Int} deriving (Eq, Show)
+
+data Ki = Ki Int Int Int Int Int deriving (Eq, Show)
 
 -- plp: player position (y,x,w)
 -- atm: max action time
@@ -52,7 +55,7 @@ data Eai = Eai {plp :: !(Maybe (Int,Int,Int)), atm :: !Int, atn :: !Int
                ,ipr :: !(M.Map String Int), spr :: !(M.Map String Int)}
                                                                       deriving (Eq, Show)
 
-type Fun = Int -> [T] -> [T] -> State -> (State,Int)
+type Fun = Int -> [T] -> [T] -> State -> (State,Ki)
 
 data Bu = Ho | Mi deriving (Eq, Show)           -- Tama Type Hodama, Mizutama
 data Dr = Mg | Hd | Ue | Si deriving (Eq, Show) -- Direction Migi, Hidari, Ue, Sita
@@ -119,18 +122,23 @@ minX = -10; maxX = 10; maxY = 10
 initstate :: State 
 initstate = State player [enemy0,enemy1] [] "" [] 
 
+pki0, eki0, eki1 :: Ki
+pki0 = Ki 7 7 7 7 7; eki0 = Ki 4 4 4 5 5; eki1 = Ki 5 5 4 4 4
+
 player :: Ply
-player = Ply{pki=30, pmki=30, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0, ing=False, look=[], ltc=0}
+player = Ply{pki=pki0, pmki=pki0, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0, ing=False, look=[], ltc=0}
 
 enemy0 :: Enm
-enemy0 = Enm{ena="douchou", eki=25, emki=25, ert=12, emrt=12, ey=10, ex=0, ew=2, edx=0, eai=eai0}
+enemy0 = Enm{ena="douchou", eki=eki0, emki=eki0, ert=12, emrt=12, ey=10, ex=0, ew=2, edx=0, eai=eai0}
 
 enemy1 :: Enm
-enemy1 = Enm{ena="kyakkan", eki=20, emki=20, ert=10, emrt=10, ey=8, ex=3, ew=1, edx=0, eai=eai0}
+enemy1 = Enm{ena="kyakkan", eki=eki1, emki=eki1, ert=10, emrt=10, ey=8, ex=3, ew=1, edx=0, eai=eai1}
 
 eai0 :: Eai
 eai0 = Eai{plp=Nothing, atm=5, atn=0, tic=0, dam=10, dan=0, ipr=makeProb 80 10 10, spr=makeProb 10 10 80}
 
+eai1 :: Eai
+eai1 = Eai{plp=Nothing, atm=4, atn=0, tic=0, dam=20, dan=0, ipr=makeProb 90 5 5, spr=makeProb 5 5 90}
 
 makeProb :: Int -> Int -> Int -> M.Map String Int
 makeProb a b c = M.fromList [("miru",a),("ugoku",b),("nageru",c)]
@@ -190,5 +198,68 @@ eraseFrom t ls = let ind = findIndex (== t) ls
                        Nothing -> ls
                        Just i  -> take i ls ++ drop (i+1) ls
 
+addKi :: Ki -> Ki -> Ki
+addKi (Ki k00 k01 k02 k03 k04) (Ki k10 k11 k12 k13 k14) =
+                      Ki (k00+k10) (k01+k11) (k02+k12) (k03+k13) (k04+k14)
+
+timKi :: Int -> Ki -> Ki
+timKi k (Ki k0 k1 k2 k3 k4) = Ki (k*k0) (k*k1) (k*k2) (k*k3) (k*k4)
+
+subKi :: Ki -> Ki -> Ki
+subKi ka kb = addKi ka (timKi (-1) kb)
+
+kiToList :: Ki -> [Int]
+kiToList (Ki k0 k1 k2 k3 k4) = [k0,k1,k2,k3,k4]
+
+listToKi :: [Int] -> Ki
+listToKi ls = Ki (ls!!0) (ls!!1) (ls!!2) (ls!!3) (ls!!4)
+
+isKiLow :: Ki -> Bool
+isKiLow (Ki k0 k1 k2 k3 k4) = k0<1 || k1<1 || k2<1 || k3<1 || k4<1
+
+sftList :: [a] -> [a] 
+sftList [] = []
+sftList [x] = [x]
+sftList (x:xs) = xs ++ [x]
+
+addList :: Num a => [a] -> [a] -> [a]
+addList [] _ = []
+addList _ [] = []
+addList (x:xs) (y:ys) = (x+y):(addList xs ys)
+
+subList :: Num a => [a] -> [a] -> [a]
+subList l1 l2 = addList l1 (map ((-1)*) l2)
+
+dealKi :: [Int] -> [Int] -> Ki
+dealKi kl mkl = listToKi$tryDealKi 5 kl mkl
+
+addMizu :: [Int] -> [Int]
+addMizu kl = (take 4 kl) ++ [(last kl)+1]
+
+tryDealKi :: Int -> [Int] -> [Int] -> [Int]
+tryDealKi 0 kl mkl = let diff = subList mkl kl 
+                         tlst = map (\x -> if(x<0) then (-x) else 0) diff
+                      in subList kl tlst
+tryDealKi i kl mkl = 
+  let zlst = [0,0,0,0,0]
+      diff = subList mkl kl
+      tlst = map (\x -> if(x<0) then (-x) else 0) diff
+      kl' = subList kl tlst
+   in if (tlst==zlst) then kl else tryDealKi (i-1) (addList kl' (sftList tlst)) mkl
+
+newKi :: Ki -> Ki -> Ki
+newKi k mk = dealKi (map (\x -> let nx = nki x klst in if(nx<0) then 0 else nx) [0..4]) mklst 
+  where klst = addMizu (kiToList k)
+        mklst = kiToList mk
+        dec :: Int -> Int
+        dec 0 = 4
+        dec n = n-1
+        nki :: Int -> [Int] -> Int
+        nki i kl = let tk = kl!!i
+                       ptk = kl!!(dec i)
+                       d1 = ptk - (kl!!(dec$dec i))
+                       d2 = tk - ptk 
+                       tk' = if(d1>0) then tk+1 else tk
+                    in if(d2>0) then tk'-1 else tk'
 -----
 

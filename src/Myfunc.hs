@@ -1,7 +1,8 @@
 module Myfunc(doWithTime,takeMes,takePtic,takePki,vhData) where
 
 import System.Random(randomRIO)
-import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Mes, minX, maxX, maxY)
+import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Bu(..), Ki(..), Mes, minX, maxX, maxY
+             ,subKi, kiToList, isKiLow, newKi)
 import Mydous(applyMana)
 import Myenai(enmAi,enTick)
 
@@ -77,8 +78,8 @@ takeMes st = mes st
 takePtic :: State -> Int
 takePtic st = ltc$pl st
 
-takePki :: State -> Int
-takePki st = pki$pl st
+takePki :: State -> [Int]
+takePki st = kiToList$pki$pl st
 
 doWithTime :: State -> IO State 
 doWithTime st@(State p es ts ms _) = do
@@ -90,7 +91,8 @@ doWithTime st@(State p es ts ms _) = do
       nes = enTick (ing np) es_e
       np' = np{ing=False}
       nms' = shortenMes nms 
-      nst = if(pki (pl st)==0) then st else makeMState st{pl=np',ens=nes,tms=nts,mes=nms'} eman 
+      nst = if(pki (pl st)==(Ki 0 0 0 0 0)) then st 
+                                            else makeMState st{pl=np',ens=nes,tms=nts,mes=nms'} eman 
   return nst
 
 shortenMes :: String -> String 
@@ -105,11 +107,12 @@ makeMState st (mn:manas) = let nst = case mn of Nothing -> st; Just jm -> applyM
 
 changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
-changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) bls =
+changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul bt' bs' by' bx' bdy' _ _ _):bss) bls =
   if (bdy'<0 && by'<=py' && bx'>=px'-pw' && bx'<=px'+pw') 
-     then let npki = pki' - bs'*2
-              ilose = npki <= 0
-           in if ilose then (m++"you lose!\n", p{pki=0,pdx=0}, [])
+     then let bki = case bt' of Ho -> Ki 0 0 0 bs' 0; Mi -> Ki 0 bs' 0 0 0;
+              npki = subKi pki' bki
+              ilose = isKiLow npki 
+           in if ilose then (m++"you lose!\n", p{pki=Ki 0 0 0 0 0,pdx=0}, [])
                        else changePly (m++"attacked!\n")
                               (p{pki=npki,px=px'+dr,pdx=pdx'-dr}) bss bls
      else changePly m p bss (bls++[b])
@@ -118,8 +121,8 @@ changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul _ bs' by' bx' bdy'
 normalPly :: Ply -> Ply
 normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx' _ look' ltc') =
   if(pdx'==0) then
-    if(prt'<0 && pki'<pmki') then np{pki=pki'+1,prt=pmrt'}
-                             else if(pki'<pmki') then np{prt=prt'-1} else np
+   if(prt'<0 && pki'/=pmki') then np{pki=newKi pki' pmki',prt=pmrt'}
+                             else if(pki'/=pmki') then np{prt=prt'-1} else np
               else np{px=px'+dr, pdx=pdx'-dr} 
                 where dr=if(pdx'>0) then 1 else (-1)
                       nlook = if(ltc'==0) then [] else look'
@@ -131,10 +134,11 @@ changeEnms m [] bls enms _ = (m, enms, bls)
 changeEnms m (e:es) [] enms [] = changeEnms m es [] (enms++[normalEnm e]) []
 changeEnms m (e:es) [] enms bls = changeEnms m es bls (enms++[e]) []
 changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es) 
-             (b@(Bul _ bs' by' bx' bdy' _ _ _):bss) enms bls =
+             (b@(Bul bt' bs' by' bx' bdy' _ _ _):bss) enms bls =
   if (bdy'>0 && by'>=ey' && bx'>=ex'-ew' && bx'<=ex'+ew') 
-     then let neki = eki' - bs'*2
-              idef = neki <= 0
+     then let bki = case bt' of Ho -> Ki 0 0 0 bs' 0; Mi -> Ki 0 bs' 0 0 0;
+              neki = subKi eki' bki
+              idef = isKiLow neki 
            in if idef then changeEnms (m++ena'++"--defeat!\n") es bss enms bls
                       else changeEnms (m++ena'++"--hit!\n")
                             (e{eki=neki,ex=ex'+dr,edx=edx'-dr}:es) bss enms bls
@@ -144,8 +148,8 @@ changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es)
 normalEnm :: Enm -> Enm 
 normalEnm e@(Enm _ eki' emki' ert' emrt' _ ex' _ edx' _) =
   if(edx'==0) then
-    if(ert'<0 && eki'<emki') then e{eki=eki'+1,ert=emrt'}
-                             else if(eki'<emki') then e{ert=ert'-1} else e
+    if(ert'<0 && eki'/=emki') then e{eki=newKi eki' emki', ert=emrt'}
+                              else if(eki'/=emki') then e{ert=ert'-1} else e
               else e{ex=ex'+dr,edx=edx'-dr} 
                 where dr=if(edx'>0) then 1 else (-1)
 
