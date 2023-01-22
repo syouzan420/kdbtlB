@@ -150,4 +150,4 @@ appMain = do
     let buildVty = V.mkVty V.defaultConfig
     initialVty <- buildVty
     void $ customMain initialVty buildVty (Just chan) theApp initialState
-
+---------------
