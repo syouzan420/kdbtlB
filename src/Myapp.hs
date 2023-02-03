@@ -6,7 +6,7 @@ module Myapp(appMain,state) where
 import Lens.Micro ((^.))
 import Lens.Micro.TH (makeLenses)
 import Lens.Micro.Mtl ((%=),(.=),zoom,use)
-import Control.Monad (void,forever)
+import Control.Monad (void,forever,when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Concurrent (threadDelay,forkIO)
 import qualified Graphics.Vty as V
@@ -41,9 +41,9 @@ makeLenses ''St
 
 drawUI :: St -> [Widget Name]
 drawUI st = [ui]
-    where s = (strWrap $ st^.stlog)
-          c = (strWrap $ st^.cmlog)
-          m = (strWrap $ st^.mslog)
+    where s = strWrap $ st^.stlog
+          c = strWrap $ st^.cmlog
+          m = strWrap $ st^.mslog
           vhd = st^.vhdata
           tic = st^.ptic
           kiv = st^.pkiv
@@ -52,19 +52,19 @@ drawUI st = [ui]
           sm = viewport Stat Vertical s
           e1 = E.renderEditor (str.unlines) True (st^.edit)
           ui = C.center $
-            (str "  ") <+> (
-              ((str "Mes : " <+> (hLimit 40 $ vLimit 5 ms)) <=> 
+            str "  " <+> (
+              (str "Mes : " <+> hLimit 30 (vLimit 5 ms)) <=> 
               str " " <=>
-              (str "Inp :> " <+> (hLimit 40 $ vLimit 3 e1)) <=>
+              (str "Inp :> " <+> hLimit 30 (vLimit 3 e1)) <=>
               str " " <=>
-              (str "Com : " <+> (withAttr atcm $ hLimit 40 $ vLimit 2 cm))) <+> 
-                (vBox $ (widgetVH tic vhd)) <+>
-                  (str " Ki : [i,u,o,a,e]" <=> (withAttr atki $ str ("      "++(show kiv)))) <=>
+              (str "Com : " <+> withAttr atcm (hLimit 30 $ vLimit 2 cm)) <+> 
+                vBox (widgetVH tic vhd) <+>
+                  (str " Ki : [i,u,o,a,e]" <=> withAttr atki (str ("      "++show kiv))) <=>
               str " " <=>
               (str "Log : "  <+> sm) <=>
               str " " <=>
               str "Esc to quit."
-            ) <+> (str "  ")
+            ) <+> str "  "
 
 atwa, athi, atcm, atki :: AttrName
 atwa = attrName "player"; athi = attrName "0"; atcm = attrName "command"; atki = attrName "ki"
@@ -72,10 +72,10 @@ atwa = attrName "player"; athi = attrName "0"; atcm = attrName "command"; atki =
 
 widgetVH :: Int -> [(String,String,String)] -> [Widget Name]
 widgetVH _ [] = []
-widgetVH _ [(_,t1,_)] = [(withAttr atwa $ str t1)] 
-widgetVH i ((t0,t1,t2):xs) = ((withAttr athi $ str t0) <+>
-                             (withAttr (attrName (show i)) $ str t1) <+>
-                             (withAttr athi $ str t2)):(widgetVH i xs)
+widgetVH _ [(_,t1,_)] = [withAttr atwa $ str t1] 
+widgetVH i ((t0,t1,t2):xs) = (withAttr athi (str t0) <+>
+                             withAttr (attrName (show i)) (str t1) <+>
+                             withAttr athi (str t2)):widgetVH i xs
 
 cmScroll :: ViewportScroll Name
 cmScroll = viewportScroll Coma
@@ -107,7 +107,7 @@ appEvent e =
           vhdata .= vhData st
           ptic .= takePtic st
           pkiv .= takePki st
-          if (st/=nst) then stlog .= show nst else return ()
+          when (st/=nst) $ stlog .= show nst 
           vScrollToEnd msScroll
         ev -> zoom edit $ E.handleEditorEvent ev 
 
@@ -137,7 +137,7 @@ makeColors 0 = [(attrName "player", fg V.brightCyan)
                ,(attrName "0", fg V.black)
                ,(attrName "command", fg V.brightYellow)
                ,(attrName "ki", fg V.brightGreen)]
-makeColors i = (attrName (show i), fg (V.rgbColor (i*10) (i*10) (i*10))):(makeColors (i-1))
+makeColors i = (attrName (show i), fg (V.rgbColor (i*10) (i*10) (i*10))):makeColors (i-1)
 
 appMain :: IO ()
 appMain = do

@@ -71,10 +71,10 @@ instance Show Mana where
 (.>) ms (Mana t y) = makeManas (y (getTs ms) t) y
 
 getTs :: [Mana] -> [T]
-getTs ms = map (\(Mana t' _) -> t') ms
+getTs = map (\(Mana t' _) -> t')
 
 makeManas :: [T] -> Y -> [Mana]
-makeManas ts y = map (\t -> Mana t y) ts
+makeManas ts y = map (`Mana` y) ts
 
 kazElem :: M.Map String Int
 kazElem = M.fromList [("hi",1),("fu",2),("mi",3),("yo",4),("yi",5)
@@ -96,10 +96,10 @@ isDigits (x:xs) = (isDigit x) && (isDigits xs)
 istoKaz :: String -> Maybe Int
 istoKaz [] = Nothing
 istoKaz [_] = Nothing
-istoKaz (a:b:xs) = let res = M.lookup (a:b:[]) kazElem 
+istoKaz (a:b:xs) = let res = M.lookup [a,b] kazElem 
                     in case res of
-                         Just 10 -> (+) <$> res <*> (if(xs==[]) then Just 0 else istoKaz xs)
-                         Just _  -> (*) <$> res <*> (if(xs==[]) then Just 1 else istoKaz xs)
+                         Just 10 -> (+) <$> res <*> (if null xs then Just 0 else istoKaz xs)
+                         Just _  -> (*) <$> res <*> (if null xs then Just 1 else istoKaz xs)
                          Nothing -> Nothing
 
 manas :: M.Map String Ta 
@@ -114,16 +114,16 @@ toMana :: String -> Maybe Mana
 toMana str = let ta = case toKaz str of
                         Just i  -> Just (Kaz i)
                         Nothing -> M.lookup str manas
-              in (\t -> (Mana (T str t) youM)) <$> ta 
+              in (\t -> Mana (T str t) youM) <$> ta 
 
 minX, maxX, maxY :: Int
 minX = -10; maxX = 10; maxY = 10
 
 initstate :: State 
-initstate = State player [enemy0,enemy1] [] "" [] 
+initstate = State player [enemy0,enemy1,enemy2] [] "" [] 
 
-pki0, eki0, eki1 :: Ki
-pki0 = Ki 7 7 7 7 7; eki0 = Ki 4 4 4 5 5; eki1 = Ki 5 5 4 4 4
+pki0, eki0, eki1, eki2 :: Ki
+pki0 = Ki 7 7 7 7 7; eki0 = Ki 4 4 4 5 5; eki1 = Ki 5 5 4 4 4; eki2 = Ki 6 5 4 5 6
 
 player :: Ply
 player = Ply{pki=pki0, pmki=pki0, prt=10, pmrt=10, py=0, px=0, pw=1, pdx=0, ing=False, look=[], ltc=0}
@@ -134,11 +134,17 @@ enemy0 = Enm{ena="douchou", eki=eki0, emki=eki0, ert=12, emrt=12, ey=10, ex=0, e
 enemy1 :: Enm
 enemy1 = Enm{ena="kyakkan", eki=eki1, emki=eki1, ert=10, emrt=10, ey=8, ex=3, ew=1, edx=0, eai=eai1}
 
+enemy2 :: Enm
+enemy2 = Enm{ena="unomin", eki=eki2, emki=eki2, ert=11, emrt=11, ey=6, ex= -4, ew=1, edx=0, eai=eai2}
+
 eai0 :: Eai
 eai0 = Eai{plp=Nothing, atm=5, atn=0, tic=0, dam=10, dan=0, ipr=makeProb 80 10 10, spr=makeProb 10 10 80}
 
 eai1 :: Eai
 eai1 = Eai{plp=Nothing, atm=4, atn=0, tic=0, dam=20, dan=0, ipr=makeProb 90 5 5, spr=makeProb 5 5 90}
+
+eai2 :: Eai
+eai2 = Eai{plp=Nothing, atm=5, atn=0, tic=0, dam=15, dan=0, ipr=makeProb 70 10 20, spr=makeProb 20 10 70}
 
 makeProb :: Int -> Int -> Int -> M.Map String Int
 makeProb a b c = M.fromList [("miru",a),("ugoku",b),("nageru",c)]
@@ -153,19 +159,19 @@ toConstr :: Ta -> String
 toConstr = head . words . show
 
 (.+.) :: [T] -> T -> [T]
-(.+.) ((T n1 (Kaz a)):ts) (T n2 (Kaz b)) = (T (n1++"+"++n2) (Kaz (a+b))):ts
-(.+.) ((T n1 (Hou la)):ts) (T n2 (Hou lb)) = (T (n1++"+"++n2) (Hou (la++lb))):ts
-(.+.) ((T n1 (Tam la)):ts) (T n2 (Tam lb)) = (T (n1++"+"++n2) (Tam (la++lb))):ts
-(.+.) (t1@(T _ (Dou _ _ _ _)):ts) t2@(T _ (Dou _ _ _ _)) = t2:t1:ts 
+(.+.) ((T n1 (Kaz a)):ts) (T n2 (Kaz b)) = T (n1++"+"++n2) (Kaz (a+b)):ts
+(.+.) ((T n1 (Hou la)):ts) (T n2 (Hou lb)) = T (n1++"+"++n2) (Hou (la++lb)):ts
+(.+.) ((T n1 (Tam la)):ts) (T n2 (Tam lb)) = T (n1++"+"++n2) (Tam (la++lb)):ts
+(.+.) (t1@(T _ (Dou {})):ts) t2@(T _ (Dou {})) = t2:t1:ts 
 (.+.) ts t = t:ts
 
 (.*.) :: [T] -> T -> [T]
-(.*.) ((T n1 (Kaz a)):ts) (T n2 (Kaz b)) = (T (n1++"*"++n2) (Kaz (a*b))):ts
-(.*.) ((T n1 (Kaz a)):ts) (T n2 (Hou ls)) = (T (n1++"*"++n2) (Hou (map (\(s,n)-> (s,n*a)) ls))):ts
-(.*.) ((T n1 (Kaz a)):ts) (T n2 (Tam ls)) = (T (n1++"*"++n2) (Tam (map (\(s,n)-> (s,n*a)) ls))):ts
-(.*.) ((T n1 (Hou ls)):ts) (T n2 (Kaz a)) = (T (n1++"*"++n2) (Hou (map (\(s,n)-> (s,n*a)) ls))):ts
-(.*.) ((T n1 (Tam ls)):ts) (T n2 (Kaz a)) = (T (n1++"*"++n2) (Tam (map (\(s,n)-> (s,n*a)) ls))):ts
-(.*.) ts t@(T _ (Dou _ _ _ _)) = makeDou t ts
+(.*.) ((T n1 (Kaz a)):ts) (T n2 (Kaz b)) = T (n1++"*"++n2) (Kaz (a*b)):ts
+(.*.) ((T n1 (Kaz a)):ts) (T n2 (Hou ls)) = T (n1++"*"++n2) (Hou (map (\(s,n)-> (s,n*a)) ls)):ts
+(.*.) ((T n1 (Kaz a)):ts) (T n2 (Tam ls)) = T (n1++"*"++n2) (Tam (map (\(s,n)-> (s,n*a)) ls)):ts
+(.*.) ((T n1 (Hou ls)):ts) (T n2 (Kaz a)) = T (n1++"*"++n2) (Hou (map (\(s,n)-> (s,n*a)) ls)):ts
+(.*.) ((T n1 (Tam ls)):ts) (T n2 (Kaz a)) = T (n1++"*"++n2) (Tam (map (\(s,n)-> (s,n*a)) ls)):ts
+(.*.) ts t@(T _ (Dou {})) = makeDou t ts
 (.*.) ((T _ (Zyo ch)):ts) t = applZyo ch t ts 
 (.*.) (t:ts) (T _ (Zyo 'd')) = uniSameTai t ts
 (.*.) ts t = t:ts
@@ -212,7 +218,7 @@ kiToList :: Ki -> [Int]
 kiToList (Ki k0 k1 k2 k3 k4) = [k0,k1,k2,k3,k4]
 
 listToKi :: [Int] -> Ki
-listToKi ls = Ki (ls!!0) (ls!!1) (ls!!2) (ls!!3) (ls!!4)
+listToKi ls = Ki (head ls) (ls!!1) (ls!!2) (ls!!3) (ls!!4)
 
 isKiLow :: Ki -> Bool
 isKiLow (Ki k0 k1 k2 k3 k4) = k0<1 || k1<1 || k2<1 || k3<1 || k4<1
@@ -225,7 +231,7 @@ sftList (x:xs) = xs ++ [x]
 addList :: Num a => [a] -> [a] -> [a]
 addList [] _ = []
 addList _ [] = []
-addList (x:xs) (y:ys) = (x+y):(addList xs ys)
+addList (x:xs) (y:ys) = (x+y):addList xs ys
 
 subList :: Num a => [a] -> [a] -> [a]
 subList l1 l2 = addList l1 (map ((-1)*) l2)
@@ -234,21 +240,21 @@ dealKi :: [Int] -> [Int] -> Ki
 dealKi kl mkl = listToKi$tryDealKi 5 kl mkl
 
 addMizu :: [Int] -> [Int]
-addMizu kl = (take 4 kl) ++ [(last kl)+1]
+addMizu kl = take 4 kl ++ [last kl +1]
 
 tryDealKi :: Int -> [Int] -> [Int] -> [Int]
 tryDealKi 0 kl mkl = let diff = subList mkl kl 
-                         tlst = map (\x -> if(x<0) then (-x) else 0) diff
+                         tlst = map (\x -> if x<0 then (-x) else 0) diff
                       in subList kl tlst
 tryDealKi i kl mkl = 
   let zlst = [0,0,0,0,0]
       diff = subList mkl kl
-      tlst = map (\x -> if(x<0) then (-x) else 0) diff
+      tlst = map (\x -> if x<0 then (-x) else 0) diff
       kl' = subList kl tlst
-   in if (tlst==zlst) then kl else tryDealKi (i-1) (addList kl' (sftList tlst)) mkl
+   in if tlst==zlst then kl else tryDealKi (i-1) (addList kl' (sftList tlst)) mkl
 
 newKi :: Ki -> Ki -> Ki
-newKi k mk = dealKi (map (\x -> let nx = nki x klst in if(nx<0) then 0 else nx) [0..4]) mklst 
+newKi k mk = dealKi (map (\x -> let nx = nki x klst in if nx<0 then 0 else nx) [0..4]) mklst 
   where klst = addMizu (kiToList k)
         mklst = kiToList mk
         dec :: Int -> Int
@@ -256,10 +262,10 @@ newKi k mk = dealKi (map (\x -> let nx = nki x klst in if(nx<0) then 0 else nx) 
         dec n = n-1
         nki :: Int -> [Int] -> Int
         nki i kl = let tk = kl!!i
-                       ptk = kl!!(dec i)
-                       d1 = ptk - (kl!!(dec$dec i))
+                       ptk = kl !! dec i
+                       d1 = ptk - (kl!!dec(dec i))
                        d2 = tk - ptk 
-                       tk' = if(d1>0) then tk+1 else tk
-                    in if(d2>0) then tk'-1 else tk'
+                       tk' = if d1>0 then tk+1 else tk
+                    in if d2>0 then tk'-1 else tk'
 -----
 
