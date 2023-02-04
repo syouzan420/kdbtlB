@@ -10,7 +10,7 @@ vhData :: State -> [(String,String,String)]
 vhData st = let p = pl st
                 xwl = look p
                 stl = plyView st
-             in (if(xwl==[]) then hLines stl else vhLines xwl stl)
+             in (if null xwl then hLines stl else vhLines xwl stl)
                 ++[("",mkPlyLine (px p) (getxPw p),"")]
 
 hLines :: [String] -> [(String,String,String)]
@@ -22,13 +22,13 @@ vhLines _ [] = []
 vhLines ((x,w):vs) (str:xs) =
   let sln = length str
       ihp = x - w - minX
-      ih = if(ihp<0) then 0 else ihp
+      ih = if ihp<0 then 0 else ihp
       ilp = ihp + 2 * w
-      il = if(ilp>sln+1) then sln else ilp
+      il = if ilp>sln+1 then sln else ilp
       t0 = take ih str
       t1 = drop ih (take (il+1) str)
       t2 = drop (il+1) str
-   in (t0,t1,t2):(vhLines vs xs)
+   in (t0,t1,t2):vhLines vs xs
 
 plyView :: State -> [String]
 plyView st = plyViewLine maxY es ts
@@ -41,21 +41,21 @@ plyViewLine i es ts = (mkViewLine enxs ewxs tmxs):(plyViewLine (i-1) es ts)
 
 getxEn :: Int -> [Enm] -> [Int]
 getxEn _ [] = []
-getxEn y (e:es) = if(y==ey e) then (ex e):(getxEn y es) else getxEn y es 
+getxEn y (e:es) = if y==ey e then (ex e):(getxEn y es) else getxEn y es 
 
 getxTm :: Int -> [Bul] -> [Int]
 getxTm _ [] = []
-getxTm y (b:bss) = if(y==by b) then (bx b):(getxTm y bss) else getxTm y bss
+getxTm y (b:bss) = if y==by b then (bx b):(getxTm y bss) else getxTm y bss
 
 getxEw :: Int -> [Enm] -> [Int]
 getxEw _ [] = []
 getxEw y (e:es) = let w = ew e; x = ex e; y' = ey e
-                   in if(y==y') then (if(w==0) then [] else [(x-w)..(x-1)]++[(x+1)..(x+w)])++(getxEw y es)
+                   in if y==y' then (if w==0 then [] else [(x-w)..(x-1)]++[(x+1)..(x+w)])++getxEw y es
                                 else getxEw y es
 
 getxPw :: Ply -> [Int]
 getxPw p = let w = pw p; x = px p
-            in if(w==0) then [] else [(x-w)..(x-1)]++[(x+1)..(x+w)]
+            in if w==0 then [] else [(x-w)..(x-1)]++[(x+1)..(x+w)]
 
 mkViewLine :: [Int] -> [Int] -> [Int] -> String
 mkViewLine enxs ewxs tmxs = 
@@ -69,11 +69,11 @@ mkPlyLine px' pwxs =
 
 scanLine :: Char -> Int -> [Int] -> String -> String
 scanLine _ _ _ [] = ""
-scanLine ch i xs (c:cs) = if (elem i xs) then [ch]++(scanLine ch (i+1) xs cs)
-                                         else [c]++(scanLine ch (i+1) xs cs)
+scanLine ch i xs (c:cs) = if elem i xs then ch:scanLine ch (i+1) xs cs
+                                         else c:scanLine ch (i+1) xs cs
 
 takeMes :: State -> String
-takeMes st = mes st
+takeMes = mes
 
 takePtic :: State -> Int
 takePtic st = ltc$pl st
@@ -91,14 +91,14 @@ doWithTime st@(State p es ts ms _) = do
       nes = enTick (ing np) es_e
       np' = np{ing=False}
       nms' = shortenMes nms 
-      nst = if(pki (pl st)==(Ki 0 0 0 0 0)) then st 
+      nst = if pki (pl st)== Ki 0 0 0 0 0 then st 
                                             else makeMState st{pl=np',ens=nes,tms=nts,mes=nms'} eman 
   return nst
 
 shortenMes :: String -> String 
 shortenMes ms = let lms = lines ms
                     lnms = length lms
-                 in if(lnms>6) then unlines$drop (lnms-6) lms else unlines lms
+                 in if lnms>6 then unlines$drop (lnms-6) lms else unlines lms
 
 makeMState :: State -> [Maybe Mana] -> State
 makeMState st [] = st
@@ -108,7 +108,7 @@ makeMState st (mn:manas) = let nst = case mn of Nothing -> st; Just jm -> applyM
 changePly :: Mes -> Ply -> [Bul] -> [Bul] -> (Mes,Ply,[Bul])
 changePly m p [] bls = (m, normalPly p, bls)
 changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul bt' bs' by' bx' bdy' _ _ _):bss) bls =
-  if (bdy'<0 && by'<=py' && bx'>=px'-pw' && bx'<=px'+pw') 
+  if bdy'<0 && by'<=py' && bx'>=px'-pw' && bx'<=px'+pw' 
      then let bki = case bt' of Ho -> Ki 0 0 0 (bs'*2) 0; Mi -> Ki 0 (bs'*2) 0 0 0;
               npki = subKi pki' bki
               ilose = isKiLow npki 
@@ -120,13 +120,13 @@ changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul bt' bs' by' bx' bd
 
 normalPly :: Ply -> Ply
 normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx' _ look' ltc') =
-  if(pdx'==0) then
-   if(prt'<0 && pki'/=pmki') then np{pki=newKi pki' pmki',prt=pmrt'}
-                             else if(pki'/=pmki') then np{prt=prt'-1} else np
+  if pdx'==0 then
+   if prt'<0 && pki'/=pmki' then np{pki=newKi pki' pmki',prt=pmrt'}
+                             else if pki'/=pmki' then np{prt=prt'-1} else np
               else np{px=px'+dr, pdx=pdx'-dr} 
-                where dr=if(pdx'>0) then 1 else (-1)
-                      nlook = if(ltc'==0) then [] else look'
-                      nltc = if(ltc'/=0) then ltc'-1 else 0
+                where dr=if pdx'>0 then 1 else (-1)
+                      nlook = if ltc'==0 then [] else look'
+                      nltc = if ltc'/=0 then ltc'-1 else 0
                       np = p{look=nlook, ltc=nltc}
   
 changeEnms :: Mes -> [Enm] -> [Bul] -> [Enm] -> [Bul] -> (Mes,[Enm],[Bul])
@@ -135,7 +135,7 @@ changeEnms m (e:es) [] enms [] = changeEnms m es [] (enms++[normalEnm e]) []
 changeEnms m (e:es) [] enms bls = changeEnms m es bls (enms++[e]) []
 changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es) 
              (b@(Bul bt' bs' by' bx' bdy' _ _ _):bss) enms bls =
-  if (bdy'>0 && by'>=ey' && bx'>=ex'-ew' && bx'<=ex'+ew') 
+  if bdy'>0 && by'>=ey' && bx'>=ex'-ew' && bx'<=ex'+ew' 
      then let bki = case bt' of Ho -> Ki 0 0 0 bs' 0; Mi -> Ki 0 bs' 0 0 0;
               neki = subKi eki' bki
               idef = isKiLow neki 
@@ -147,20 +147,20 @@ changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es)
 
 normalEnm :: Enm -> Enm 
 normalEnm e@(Enm _ eki' emki' ert' emrt' _ ex' _ edx' _) =
-  if(edx'==0) then
-    if(ert'<0 && eki'/=emki') then e{eki=newKi eki' emki', ert=emrt'}
-                              else if(eki'/=emki') then e{ert=ert'-1} else e
+  if edx'==0 then
+    if ert'<0 && eki'/=emki' then e{eki=newKi eki' emki', ert=emrt'}
+                              else if eki'/=emki' then e{ert=ert'-1} else e
               else e{ex=ex'+dr,edx=edx'-dr} 
-                where dr=if(edx'>0) then 1 else (-1)
+                where dr=if edx'>0 then 1 else (-1)
 
 changeBuls :: Mes -> [Bul] -> [Bul] -> (Mes,[Bul])
 changeBuls m [] bls = (m,bls) 
 changeBuls m (b@(Bul _ bs' by' bx' bdy' bdx' bmt' btc'):bss) bls =
   let nby = by'+bdy'
-      nbtc = if (btc'==0) then 0 else btc'-1
-      nbx = if (nbtc==0) then bx'+bdx' else bx'
-      nbtc' = if(nbtc==0) then bmt' else nbtc
-   in if (nby>(maxY+bs') || nby<(0-bs'))
+      nbtc = if btc'==0 then 0 else btc'-1
+      nbx = if nbtc==0 then bx'+bdx' else bx'
+      nbtc' = if nbtc==0 then bmt' else nbtc
+   in if nby>(maxY+bs') || nby<negate bs'
          then changeBuls m bss bls
          else changeBuls m bss (bls++[b{by=nby,bx=nbx,btc=nbtc'}])
 

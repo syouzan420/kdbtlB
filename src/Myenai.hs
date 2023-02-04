@@ -7,10 +7,10 @@ enTick :: Bool -> [Enm] -> [Enm]
 enTick _ [] = []
 enTick b (e:es) =
   let (Eai _ atm' atn' tic' dam' dan' _ _) = eai e
-      natn = if (atn'==0) then atm' else atn'-1
-      ntic = if (tic'==0) then 0 else tic'-1
+      natn = if atn'==0 then atm' else atn'-1
+      ntic = if tic'==0 then 0 else tic'-1
       ndan = if b then dam' else if (dan'==0) then 0 else dan'-1
-   in e{eai=(eai e){atn=natn, tic=ntic, dan=ndan}}:(enTick b es)
+   in e{eai=(eai e){atn=natn, tic=ntic, dan=ndan}}:enTick b es
 
 enmAi :: Mes -> Bool -> [Int] -> [Enm] -> Int -> [Maybe Mana] -> (Mes,[Maybe Mana])
 enmAi m _ _ [] _ manas = (m, manas)
@@ -25,21 +25,21 @@ anenm m b r i e
         pr = if (plp'==Nothing && not b) then ipr' else
              if (plp'/=Nothing && not b) then changePr dam' dan' spr' else changePr dam' dam' spr'
         act = setAct r pr
-        drt = if (dan'==0) then 0 else (div 100 dam')*dan'
+        drt = if dan'==0 then 0 else div 100 dam'*dan'
         emana = actMana r i eki' ex' ew' plp' act drt
     in (m,emana)
   where atn' = atn$eai e; ex'=ex e; ew'=ew e; eki'=eki e
 
 actMana :: Int -> Int -> Ki -> Int -> Int -> Maybe (Int,Int,Int) -> String -> Int -> Maybe Mana
 actMana r tg enk enx enw po act drt =
-  let flg = if(r<50) then True else False 
+  let flg = r<50 
       fto = if flg then 1 else (-1)
       tam = if flg then "hodama" else "mizutama"
       kit = if flg then 1 else 4
       kls = kiToList enk
       tki = kls!!kit
       dir b = if b then "hidari" else "migi"
-      pow = div (tki*(div r 2)) 100
+      pow = div (tki*div r 2) 100
       henk = div tki 2
       pow' = if(pow==0) then 1 else if(pow>henk) then (if(henk>0) then henk else 1) else pow
       coms = case po of
@@ -51,26 +51,26 @@ actMana r tg enk enx enw po act drt =
                Just (_,x,_) -> 
                  let ddx = enx - x
                   in case act of
-                       "miru"   -> if(ddx==0) then [act] else [dir (ddx>0),show (abs ddx),act] 
+                       "miru"   -> if ddx==0 then [act] else [dir (ddx>0),show (abs ddx),act] 
                        "ugoku"  -> let ddx' = if((div r 2)>=drt) then ddx else
                                               if(ddx==0) then fto*enw*2 else (div ddx (abs ddx))*enw*2
                                    in [dir (ddx'>0),show (abs ddx'),act]
-                       "nageru" -> if (ddx==0) then [tam,show pow',act]
+                       "nageru" -> if ddx==0 then [tam,show pow',act]
                                                else [dir (ddx>0),show (abs ddx),tam,show pow',act]
                        _        -> ["noact"]
       res = Prelude.foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) []
                                                                 (Prelude.map toMana coms)
-   in (changeNa tg) <$> (case res of [] -> Nothing; (rs:[]) -> Just rs; _ -> Nothing) 
+   in changeNa tg <$> (case res of [] -> Nothing; [rs] -> Just rs; _ -> Nothing) 
                 
 changeNa :: Int -> Mana -> Mana
 changeNa tg (Mana (T na ta) yo) = 
-  let (hna,nas) = case (words na) of [] -> ("",[""]); (hna':nas') -> (hna',nas')
-   in Mana (T (hna++"*"++(show tg)++" "++(unwords nas)) ta) yo
+  let (hna,nas) = case words na of [] -> ("",[""]); (hna':nas') -> (hna',nas')
+   in Mana (T (hna++"*"++show tg++" "++unwords nas) ta) yo
 
 changePr :: Int -> Int -> M.Map String Int -> M.Map String Int
 changePr dm dn spr' =
-  let ug = case (M.lookup "ugoku" spr') of Just ug' -> ug'; _ -> 0;
-      na = case (M.lookup "nageru" spr') of Just na' -> na'; _ -> 0;
+  let ug = case M.lookup "ugoku" spr' of Just ug' -> ug'; _ -> 0;
+      na = case M.lookup "nageru" spr' of Just na' -> na'; _ -> 0;
       dr = div (na-ug) dm
    in M.adjust ((+) ((-dr)*dn)) "nageru" (M.adjust ((+) (dr*dn)) "ugoku" spr')
 
@@ -82,6 +82,6 @@ checkAct :: Int -> Int -> [(String,Int)] -> String
 checkAct _ _ [] = "noact"
 checkAct r mi ((k,v):ls) =
   let ma = mi+v
-   in if (r>=mi && r<ma) then k else checkAct r ma ls
+   in if r>=mi && r<ma then k else checkAct r ma ls
 
 
