@@ -8,7 +8,6 @@ import Data.List (findIndex, isInfixOf)
 import Data.List.Split (splitOn)
 import Data.Char (isDigit)
 
-
 data Mana = Mana T Y
 
 data T = T Na Ta deriving (Eq, Show)
@@ -81,17 +80,17 @@ kazElem = M.fromList [("hi",1),("fu",2),("mi",3),("yo",4),("yi",5)
                      ,("mu",6),("na",7),("ya",8),("ko",9),("so",10)]
 
 toKaz :: String -> Maybe Int
-toKaz str = if (isInfixOf "so" str) then
+toKaz str 
+  | "so" `isInfixOf` str =  
                 let sps = splitOn "so" str
                     mbs = map (istoKaz . (++ "so")) (init sps)
-                    mbs' = if(last sps=="") then mbs else mbs++[istoKaz (last sps)]
+                    mbs' = if last sps=="" then mbs else mbs++[istoKaz (last sps)]
                  in foldl (flip (<*>)) (Just 0) $ ((+) <$>) <$> mbs' 
-                                    else if (isDigits str) then Just ((read str)::Int)
-                                                           else istoKaz str
+  | isDigits str = Just (read str::Int)
+  | otherwise = istoKaz str
 
 isDigits :: String -> Bool
-isDigits [] = True
-isDigits (x:xs) = (isDigit x) && (isDigits xs)
+isDigits = foldr ((&&).isDigit) True 
 
 istoKaz :: String -> Maybe Int
 istoKaz [] = Nothing

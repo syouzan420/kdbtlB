@@ -71,7 +71,7 @@ mkPlyLine px' pwxs =
 scanLine :: Char -> Int -> [Int] -> String -> String
 scanLine _ _ _ [] = ""
 scanLine ch i xs (c:cs) = if elem i xs then ch:scanLine ch (i+1) xs cs
-                                         else c:scanLine ch (i+1) xs cs
+                                       else c:scanLine ch (i+1) xs cs
 
 takeMes :: State -> String
 takeMes = mes
@@ -93,7 +93,7 @@ doWithTime st@(State p es ts ms _) = do
       np' = np{ing=False}
       nms' = shortenMes nms 
       nst = if pki (pl st)== Ki 0 0 0 0 0 then st 
-                                            else makeMState st{pl=np',ens=nes,tms=nts,mes=nms'} eman 
+                                          else makeMState st{pl=np',ens=nes,tms=nts,mes=nms'} eman 
   return nst
 
 shortenMes :: String -> String 
@@ -147,7 +147,10 @@ changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es)
                       else changeEnms (m++ena'++"--hit!\n")
                             (e{eki=neki,ex=ex'+dr,edx=edx'-dr}:es) bss enms bls
      else changeEnms m (e:es) bss enms (bls++[b])
-                          where dr=if(edx'>0) then 1 else if(edx'<0) then (-1) else 0
+                          where dr
+                                  | edx'>0 = 1
+                                  | edx'<0 = -1
+                                  | otherwise = 0
 
 normalEnm :: Enm -> Enm 
 normalEnm e@(Enm _ eki' emki' ert' emrt' _ ex' _ edx' _) =
