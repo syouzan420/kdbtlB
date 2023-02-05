@@ -1,6 +1,7 @@
 module Myfunc(doWithTime,takeMes,takePtic,takePki,vhData) where
 
 import System.Random(randomRIO)
+import Control.Monad(replicateM)
 import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Bu(..), Ki(..), Mes, minX, maxX, maxY
              ,subKi, kiToList, isKiLow, newKi)
 import Mydous(applyMana)
@@ -14,7 +15,7 @@ vhData st = let p = pl st
                 ++[("",mkPlyLine (px p) (getxPw p),"")]
 
 hLines :: [String] -> [(String,String,String)]
-hLines strl = map (\s -> (s,"","")) strl
+hLines = map (\s -> (s,"","")) 
 
 vhLines :: [(Int,Int)] -> [String] -> [(String,String,String)]
 vhLines [] _ = []
@@ -36,16 +37,16 @@ plyView st = plyViewLine maxY es ts
 
 plyViewLine :: Int -> [Enm] -> [Bul] -> [String]
 plyViewLine 0 _ _ = [] 
-plyViewLine i es ts = (mkViewLine enxs ewxs tmxs):(plyViewLine (i-1) es ts)
+plyViewLine i es ts = mkViewLine enxs ewxs tmxs:plyViewLine (i-1) es ts
   where enxs = getxEn i es; ewxs = getxEw i es; tmxs = getxTm i ts
 
 getxEn :: Int -> [Enm] -> [Int]
 getxEn _ [] = []
-getxEn y (e:es) = if y==ey e then (ex e):(getxEn y es) else getxEn y es 
+getxEn y (e:es) = if y==ey e then ex e:getxEn y es else getxEn y es 
 
 getxTm :: Int -> [Bul] -> [Int]
 getxTm _ [] = []
-getxTm y (b:bss) = if y==by b then (bx b):(getxTm y bss) else getxTm y bss
+getxTm y (b:bss) = if y==by b then bx b:getxTm y bss else getxTm y bss
 
 getxEw :: Int -> [Enm] -> [Int]
 getxEw _ [] = []
@@ -83,7 +84,7 @@ takePki st = kiToList$pki$pl st
 
 doWithTime :: State -> IO State 
 doWithTime st@(State p es ts ms _) = do
-  prs <- sequence$replicate (length es) (randomRIO (0::Int,99))
+  prs <- replicateM (length es) (randomRIO (0::Int,99))
   let (ms_p,np,ts_p) = changePly ms p ts []
       (ms_e,es_e,ts_e) = changeEnms ms_p es ts_p [] []
       (ms_b,nts) = changeBuls ms_e ts_e []
@@ -116,7 +117,10 @@ changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul bt' bs' by' bx' bd
                        else changePly (m++"attacked!\n")
                               (p{pki=npki,px=px'+dr,pdx=pdx'-dr}) bss bls
      else changePly m p bss (bls++[b])
-                          where dr=if(pdx'>0) then 1 else if(pdx'<0) then (-1) else 0
+  where dr
+         | pdx'>0 = 1
+         | pdx'<0 = -1
+         | otherwise = 0
 
 normalPly :: Ply -> Ply
 normalPly p@(Ply pki' pmki' prt' pmrt' _ px' _ pdx' _ look' ltc') =

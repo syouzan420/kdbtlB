@@ -16,8 +16,7 @@ exeCom com s = let coms =  words com
                                 else makeState s{pl=(pl s){ing=False},mns=[]} res
 
 makeState :: State -> [Mana] -> State
-makeState st [] = st
-makeState st (mn:manas) = makeState (applyMana st mn) manas 
+makeState = foldl applyMana  
 
 applyMana :: State -> Mana -> State
 applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) = 
@@ -30,7 +29,7 @@ applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) =
                     Nothing -> (st',Ki 0 0 0 0 0)
                     Just f  -> f tg ts1 ts2 st'
       enms = ens nst
-      tki = if tg==(-1) then pki$pl$nst else eki$enms!!tg
+      tki = if tg==(-1) then pki$pl nst else eki$enms!!tg
       kdif = subKi tki cs
       icast = not$isKiLow kdif
       nen = if tg>=0 then (enms!!tg){eki=kdif} else head enms 
@@ -99,14 +98,14 @@ coinCide :: (Int, Int) -> (Int, Int) -> (Int, Int)
 coinCide (x,w) (x1,w1) =
   let s1 = [(x-w)..(x+w)]; s2 = [(x1-w1)..(x1+w1)]
       un = intersect s1 s2
-   in if (un==[]) then (0,0) else let h = head un
-                                      l = last un
-                                   in (div (h+l) 2,div (l-h) 2)
+   in if null un then (0,0) else let h = head un
+                                     l = last un
+                                  in (div (h+l) 2,div (l-h) 2)
 
 seeToMes :: [Pos] -> String
-seeToMes sis = concat$map (\(y,c,w,n) -> "dist: "++(show y)++" dir: "++
-  (if (c>0) then "migi" else if (c<0) then "hidari" else "manaka")++(show c)++
-    " haba"++(show w)++"---"++n++"\n") sis
+seeToMes = concatMap (\(y,c,w,n) -> "dist: "++ show y++" dir: "
+                     ++(if c>0 then "migi" else if c<0 then "hidari" else "manaka") 
+                     ++show c++ " haba"++show w ++"---"++n++"\n")
 
 ugoku :: Fun
 ugoku _ [] _ st = (st{mes="No Direction"},Ki 0 0 0 0 0)
@@ -158,9 +157,14 @@ makeBullets :: [(Bu,Int)] -> [(Dr,Int)] -> Int -> (Int, Int) -> ([Bul],Ki)
 makeBullets [] _ _ _ = ([],Ki 0 0 0 0 0)
 makeBullets ((b,s):bss) hus sp (y,x) = 
   let (dy, dx) = calcDelta hus sp
-      nbmt = if (dx==0) then 0 else if (maxY>=dx) then div maxY (abs dx) else 1
-      ndx = if (dx==0) then 0 else if(maxY>=dx) then if(dx>0) then 1 else (-1) 
-                                                else div dx maxY
+      nbmt 
+        | dx==0 = 0
+        | maxY>=dx = div maxY (abs dx)
+        | otherwise = 1
+      ndx
+        | dx==0 = 0 
+        | maxY>=dx = if dx>0 then 1 else (-1) 
+        | otherwise = div dx maxY
       cs = case b of Ho -> Ki 0 s 0 0 (abs sp); Mi -> Ki 0 0 (abs sp) 0 s;
    in ((Bul{bt=b, bs=s, by=y, bx=x, bdy=dy, bdx=ndx, bmt=nbmt, btc=nbmt}):fst mkb
       ,addKi (snd mkb) cs)
