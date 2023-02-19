@@ -35,7 +35,7 @@ applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) =
       nen = if tg>=0 then (enms!!tg){eki=kdif} else head enms 
       nens = if tg>=0 then take tg enms ++ [nen] ++ drop (tg+1) enms else enms
    in if icast then if tg==(-1) then nst{pl=(pl nst){pki=kdif}} else nst{ens=nens}
-               else if tg==(-1) then st'{mes=mes st'++"not enough KI!\n"} else st'
+               else if tg==(-1) then nst{mes=mes st'++"not enough KI!\n"} else nst 
 applyMana st m = st{mns= [m]}
 
 funcName :: M.Map String Fun 
