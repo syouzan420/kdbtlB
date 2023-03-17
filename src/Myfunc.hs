@@ -75,7 +75,7 @@ scanLine ch i xs (c:cs) = if i `elem` xs then ch:scanLine ch (i+1) xs cs
                                          else c:scanLine ch (i+1) xs cs
 
 takeMes :: State -> String
-takeMes = toTate 12 10.mes
+takeMes = toTate 12 10 (-1).mes
 
 takePtic :: State -> Int
 takePtic st = ltc$pl st
