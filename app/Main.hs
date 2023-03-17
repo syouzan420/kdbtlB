@@ -5,4 +5,3 @@ import Myapp
 main :: IO ()
 main = appMain 
 
-------
