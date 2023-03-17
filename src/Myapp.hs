@@ -53,7 +53,7 @@ drawUI st = [ui]
           e1 = E.renderEditor (str.unlines) True (st^.edit)
           ui = C.center $
             str "  " <+> (
-              (str "Mes : " <+> hLimit 30 (vLimit 5 ms)) <=> 
+              (str "Mes : " <+> hLimit 30 (vLimit 12 ms)) <=> 
               str " " <=>
               (str "Inp :> " <+> hLimit 30 (vLimit 3 e1)) <=>
               str " " <=>
@@ -80,8 +80,8 @@ widgetVH i ((t0,t1,t2):xs) = (withAttr athi (str t0) <+>
 cmScroll :: ViewportScroll Name
 cmScroll = viewportScroll Coma
 
-msScroll :: ViewportScroll Name
-msScroll = viewportScroll Mess 
+--msScroll :: ViewportScroll Name
+--msScroll = viewportScroll Mess 
 
 appEvent :: BrickEvent Name CustomEvent -> EventM Name St ()
 appEvent e =
@@ -98,7 +98,7 @@ appEvent e =
           cmlog %= (++com)
           edit .= E.editor Edit (Just 1) ""
           vScrollToEnd cmScroll
-          vScrollToEnd msScroll
+          --vScrollToEnd msScroll
         AppEvent Ticking -> do
           st <- use state 
           nst <- liftIO$doWithTime st
@@ -108,7 +108,7 @@ appEvent e =
           ptic .= takePtic st
           pkiv .= takePki st
           when (st/=nst) $ stlog .= show nst 
-          vScrollToEnd msScroll
+          --vScrollToEnd msScroll
         ev -> zoom edit $ E.handleEditorEvent ev 
 
 

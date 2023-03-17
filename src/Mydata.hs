@@ -1,12 +1,13 @@
 
 module Mydata(State(..), Mana(..), Ply(..), Enm(..), Bul(..), Mes, Eai(..) ,T(..), Ta(..)
              , Bu(..), Dr(..), Ki(..), Fun, toMana, initstate, (.>), minX, maxX, maxY, youM
-             , addKi, timKi, subKi, kiToList, isKiLow, newKi) where
+             , addKi, timKi, subKi, kiToList, isKiLow, newKi, kanaToRoman, nameToKana) where
 
 import qualified Data.Map.Strict as M
 import Data.List (findIndex, isInfixOf)
 import Data.List.Split (splitOn)
 import Data.Char (isDigit)
+import Data.Maybe (fromMaybe)
 
 data Mana = Mana T Y
 
@@ -109,6 +110,23 @@ manas = M.fromList [("to",Zyo 't'),("ga",Zyo 'g'),("de",Zyo 'd')
                    ,("ugoku",Dou ["Hou"] ["Kaz"] [] [])
                    ,("miru",Dou [] ["Hou"] [] [])]
 
+kanaRoman :: M.Map String String 
+kanaRoman = M.fromList [("と","to"),("が","ga"),("で","de"),("ほだま","hodama")
+                       ,("みづたま","mizutama"),("みずたま","mizutama")
+                       ,("みぎ","migi"),("ひだり","hidari"),("なげる","nageru")
+                       ,("うごく","ugoku"),("みる","miru")
+                       ,("ひ","hi"),("ふ","fu"),("み","mi"),("よ","yo"),("ゐ","yi")
+                       ,("む","mu"),("な","na"),("や","ya"),("こ","ko"),("そ","so")]
+
+kanaToRoman :: String -> String
+kanaToRoman str = fromMaybe str (M.lookup str kanaRoman)
+
+nameKana :: M.Map String String
+nameKana = M.fromList [("douchou","どうちやう"),("kyakkan","きやつかん"),("unomin","うのみん")]
+
+nameToKana :: String -> String
+nameToKana str = fromMaybe str (M.lookup str nameKana)
+
 toMana :: String -> Maybe Mana
 toMana str = let ta = case toKaz str of
                         Just i  -> Just (Kaz i)
@@ -119,7 +137,7 @@ minX, maxX, maxY :: Int
 minX = -10; maxX = 10; maxY = 10
 
 initstate :: State 
-initstate = State player [enemy0,enemy1,enemy2] [] "" [] 
+initstate = State player [enemy0] [] "" [] 
 
 pki0, eki0, eki1, eki2 :: Ki
 pki0 = Ki 7 7 7 7 7; eki0 = Ki 4 4 4 5 5; eki1 = Ki 5 5 4 4 4; eki2 = Ki 6 5 4 5 6

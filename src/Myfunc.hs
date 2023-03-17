@@ -3,9 +3,10 @@ module Myfunc(doWithTime,takeMes,takePtic,takePki,vhData) where
 import System.Random(randomRIO)
 import Control.Monad(replicateM)
 import Mydata(State(..), Mana, Ply(..), Enm(..), Bul(..), Bu(..), Ki(..), Mes, minX, maxX, maxY
-             ,subKi, kiToList, isKiLow, newKi)
+             ,subKi, kiToList, isKiLow, newKi, nameToKana)
 import Mydous(applyMana)
 import Myenai(enmAi,enTick)
+import Tate(toTate)
 
 vhData :: State -> [(String,String,String)]
 vhData st = let p = pl st
@@ -70,11 +71,11 @@ mkPlyLine px' pwxs =
 
 scanLine :: Char -> Int -> [Int] -> String -> String
 scanLine _ _ _ [] = ""
-scanLine ch i xs (c:cs) = if elem i xs then ch:scanLine ch (i+1) xs cs
-                                       else c:scanLine ch (i+1) xs cs
+scanLine ch i xs (c:cs) = if i `elem` xs then ch:scanLine ch (i+1) xs cs
+                                         else c:scanLine ch (i+1) xs cs
 
 takeMes :: State -> String
-takeMes = mes
+takeMes = toTate 12 10.mes
 
 takePtic :: State -> Int
 takePtic st = ltc$pl st
@@ -113,8 +114,8 @@ changePly m p@(Ply pki' _ _ _ py' px' pw' pdx' _ _ _) (b@(Bul bt' bs' by' bx' bd
      then let bki = case bt' of Ho -> Ki 0 0 0 (bs'*2) 0; Mi -> Ki 0 (bs'*2) 0 0 0;
               npki = subKi pki' bki
               ilose = isKiLow npki 
-           in if ilose then (m++"you lose!\n", p{pki=Ki 0 0 0 0 0,pdx=0}, [])
-                       else changePly (m++"attacked!\n")
+           in if ilose then (m++"やられた！\n", p{pki=Ki 0 0 0 0 0,pdx=0}, [])
+                       else changePly (m++"うたれた！\n")
                               (p{pki=npki,px=px'+dr,pdx=pdx'-dr}) bss bls
      else changePly m p bss (bls++[b])
   where dr
@@ -143,8 +144,8 @@ changeEnms m (e@(Enm ena' eki' _ _ _ ey' ex' ew' edx' _):es)
      then let bki = case bt' of Ho -> Ki 0 0 0 bs' 0; Mi -> Ki 0 bs' 0 0 0;
               neki = subKi eki' bki
               idef = isKiLow neki 
-           in if idef then changeEnms (m++ena'++"--defeat!\n") es bss enms bls
-                      else changeEnms (m++ena'++"--hit!\n")
+           in if idef then changeEnms (m++nameToKana ena'++"--たおした！\n") es bss enms bls
+                      else changeEnms (m++nameToKana ena'++"--あたり！\n")
                             (e{eki=neki,ex=ex'+dr,edx=edx'-dr}:es) bss enms bls
      else changeEnms m (e:es) bss enms (bls++[b])
                           where dr

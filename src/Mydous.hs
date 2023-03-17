@@ -3,14 +3,14 @@ module Mydous(exeCom,applyMana) where
 import qualified Data.Map.Strict as M
 import Data.List (intersect)
 import Data.List.Split (splitOn)
-import Mydata(T(..),Ta(..),Mana(..),State(..),Dr(..)
-             ,Bu(..),Fun,Ki(..),Bul(..),Ply(..),Enm(..),Eai(..),(.>),toMana,maxY,addKi,subKi,isKiLow)
+import Mydata(T(..),Ta(..),Mana(..),State(..),Dr(..),Bu(..),Fun,Ki(..),Bul(..)
+             ,Ply(..),Enm(..),Eai(..),(.>),toMana,maxY,addKi,subKi,isKiLow,kanaToRoman,nameToKana)
 
 type Pos = (Int, Int, Int, String) -- y, x, width, name
 
 exeCom :: String -> State -> State 
 exeCom com s = let coms =  words com
-                   manas = map toMana coms
+                   manas = map (toMana.kanaToRoman) coms
                    res = foldl (\acc mn -> case mn of Just m' -> acc .> m'; _ -> acc) [] manas
                 in if null res then s{mes=mes s++"ERROR!!\n"} 
                                 else makeState s{pl=(pl s){ing=False},mns=[]} res
@@ -35,7 +35,7 @@ applyMana st m@(Mana (T na (Dou _ _ ts1 ts2)) _) =
       nen = if tg>=0 then (enms!!tg){eki=kdif} else head enms 
       nens = if tg>=0 then take tg enms ++ [nen] ++ drop (tg+1) enms else enms
    in if icast then if tg==(-1) then nst{pl=(pl nst){pki=kdif}} else nst{ens=nens}
-               else if tg==(-1) then nst{mes=mes st'++"not enough KI!\n"} else nst 
+               else if tg==(-1) then nst{mes=mes st'++"き が たりない！\n"} else nst 
 applyMana st m = st{mns= [m]}
 
 funcName :: M.Map String Fun 
@@ -148,10 +148,10 @@ mNage (-1) st = showNage (-1) st{pl=(pl st){ing=True}}
 mNage tg st = showNage tg st
 
 showNage :: Int -> State -> State
-showNage (-1) st = st{mes=mes st++"tama wo nageta!\n"}
+showNage (-1) st = st{mes=mes st++"たま を なげた！\n"}
 showNage tg st = let e = ens st!!tg
                      ename = ena e
-                  in st{mes=mes st++ename++" ga tama wo nageta!\n"}
+                  in st{mes=mes st++nameToKana ename++" が たま を なげた！\n"}
 
 makeBullets :: [(Bu,Int)] -> [(Dr,Int)] -> Int -> (Int, Int) -> ([Bul],Ki)
 makeBullets [] _ _ _ = ([],Ki 0 0 0 0 0)
